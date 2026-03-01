@@ -14,6 +14,7 @@ const CareerPage = lazy(() => import('./pages/CareerPage').then(module => ({ def
 const MentorsPage = lazy(() => import('./pages/MentorsPage').then(module => ({ default: module.MentorsPage })));
 const TracksPage = lazy(() => import('./pages/TracksPage').then(module => ({ default: module.TracksPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then(module => ({ default: module.AboutPage })));
+const LibraryPage = lazy(() => import('./pages/LibraryPage').then(module => ({ default: module.LibraryPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then(module => ({ default: module.ContactPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })));
 const SignupPage = lazy(() => import('./pages/SignupPage').then(module => ({ default: module.SignupPage })));
@@ -46,7 +47,7 @@ const CertificationsPage = lazy(() => import('./pages/CertificationsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
 const KeywordLandingPage = lazy(() => import('./pages/KeywordLandingPage').then(module => ({ default: module.KeywordLandingPage })));
 
-export type Page = 'home' | 'careers' | 'mentors' | 'tracks' | 'about' | 'contact' | 'login' | 'signup' | 'student-auth' | 'student-onboarding' | 'student-dashboard';
+export type Page = 'home' | 'careers' | 'mentors' | 'tracks' | 'about' | 'library' | 'contact' | 'login' | 'signup' | 'student-auth' | 'student-onboarding' | 'student-dashboard';
 
 // Loading Fallback
 const PageLoader = () => (
@@ -113,6 +114,7 @@ function App() {
           {/* Auth/Dashboard pages moved to standalone routes below */}
           <Route path="/tracks" element={<TracksPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/library" element={<LibraryPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Route>
 

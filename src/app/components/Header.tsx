@@ -25,6 +25,7 @@ export function Header() {
     { label: 'Tracks', path: '/tracks' },
     { label: 'Careers', path: '/careers' },
     { label: 'About', path: '/about' },
+    { label: 'Library', path: '/library' },
   ];
 
   return (
