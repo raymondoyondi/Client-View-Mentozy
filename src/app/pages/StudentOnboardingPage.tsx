@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, ChevronDown, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getSupabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 
@@ -359,7 +359,7 @@ export function StudentOnboardingPage() {
                                     </div>
 
                                     <p className="text-xs text-gray-500 text-center mt-4">
-                                        By creating an account, you agree to our <a href="#" className="text-amber-600 underline">Terms</a> & <a href="#" className="text-amber-600 underline">Privacy Policy</a>.
+                                        By creating an account, you agree to our <Link to="/terms-of-service" className="text-amber-600 underline">Terms</Link> & <Link to="/privacy-policy" className="text-amber-600 underline">Privacy Policy</Link>.
                                     </p>
                                 </div>
                             )}

@@ -99,9 +99,9 @@ export function StudentAuthPage() {
                     <div className="mt-8 text-center text-sm">
                         <p className="text-gray-400">
                             By continuing, you agree to our{' '}
-                            <a href="#" className="font-medium text-gray-600 hover:text-gray-900 underline">Terms</a>{' '}
+                            <Link to="/terms-of-service" className="font-medium text-gray-600 hover:text-gray-900 underline">Terms</Link>{' '}
                             and{' '}
-                            <a href="#" className="font-medium text-gray-600 hover:text-gray-900 underline">Privacy Policy</a>
+                            <Link to="/privacy-policy" className="font-medium text-gray-600 hover:text-gray-900 underline">Privacy Policy</Link>
                         </p>
                     </div>
 

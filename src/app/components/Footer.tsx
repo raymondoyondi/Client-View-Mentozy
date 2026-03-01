@@ -20,8 +20,8 @@ export const Footer = memo(function Footer() {
       { label: 'Become a Mentor', path: '/contact' },
     ],
     legal: [
-      { label: 'Privacy Policy', path: '#' },
-      { label: 'Terms of Service', path: '#' },
+      { label: 'Privacy Policy', path: '/privacy-policy' },
+      { label: 'Terms of Service', path: '/terms-of-service' },
       { label: 'Cookie Policy', path: '#' }
     ]
   };
@@ -92,9 +92,9 @@ export const Footer = memo(function Footer() {
               <ul className="space-y-4 text-sm text-gray-500">
                 {links.legal.map((link, i) => (
                   <li key={i}>
-                    <a href={link.path} className="hover:text-amber-600 transition-colors block w-full sm:w-auto">
+                    <Link to={link.path} className="hover:text-amber-600 transition-colors block w-full sm:w-auto">
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

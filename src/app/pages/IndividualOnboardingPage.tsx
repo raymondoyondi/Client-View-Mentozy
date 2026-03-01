@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
 import { getSupabase } from '../../lib/supabase';
 import { toast } from 'sonner';
@@ -326,7 +326,7 @@ export function IndividualOnboardingPage() {
                                     <ReviewRow label="Hourly Rate" value={`$${formData.hourlyRate}/hr`} onEdit={() => setStep(4)} />
                                 </div>
                                 <p className="text-xs text-center text-gray-500">
-                                    By creating an account, you agree to our Terms of Service and Privacy Policy.
+                                    By creating an account, you agree to our <Link to="/terms-of-service" className="text-amber-600 hover:underline">Terms of Service</Link> and <Link to="/privacy-policy" className="text-amber-600 hover:underline">Privacy Policy</Link>.
                                 </p>
                             </div>
                         )}

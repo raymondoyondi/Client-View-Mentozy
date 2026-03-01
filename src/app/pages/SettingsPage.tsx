@@ -327,14 +327,14 @@ export function SettingsPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <a href="#" className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-100 transition-all group">
+                                <a href="/terms-of-service" className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-100 transition-all group">
                                     <div className="flex items-center gap-3">
                                         <FileText className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" />
                                         <span className="text-sm font-bold text-gray-700">Terms of Service</span>
                                     </div>
                                     <ExternalLink className="w-4 h-4 text-gray-300" />
                                 </a>
-                                <a href="#" className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-100 transition-all group">
+                                <a href="/privacy-policy" className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-100 transition-all group">
                                     <div className="flex items-center gap-3">
                                         <Shield className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" />
                                         <span className="text-sm font-bold text-gray-700">Privacy Policy</span>
