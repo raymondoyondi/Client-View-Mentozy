@@ -199,10 +199,11 @@ export function LibraryPage() {
             window.URL.revokeObjectURL(blobUrl);
 
             // Increment download count
-            await supabase
+            const { error } = await supabase
                 .from('library_resources')
                 .update({ downloads: resource.downloads + 1 })
                 .eq('id', resource.id);
+            if (error) throw error;
 
             // Update local state to reflect the new count
             setResources(prev => prev.map(r => r.id === resource.id ? { ...r, downloads: r.downloads + 1 } : r));
@@ -220,10 +221,11 @@ export function LibraryPage() {
             // Optimistic local update
             setResources(prev => prev.map(r => r.id === resource.id ? { ...r, likes: currentLikes + 1 } : r));
 
-            await supabase
+            const { error } = await supabase
                 .from('library_resources')
                 .update({ likes: currentLikes + 1 })
                 .eq('id', resource.id);
+            if (error) throw error;
         } catch (error) {
             console.error('Failed to like resource:', error);
             // Revert on failure
@@ -237,10 +239,11 @@ export function LibraryPage() {
         if (!supabase) return;
         try {
             // Increment view count
-            await supabase
+            const { error } = await supabase
                 .from('library_resources')
                 .update({ views: resource.views + 1 })
                 .eq('id', resource.id);
+            if (error) throw error;
 
             // Update local state to reflect the new views count
             setResources(prev => prev.map(r => r.id === resource.id ? { ...r, views: r.views + 1 } : r));
