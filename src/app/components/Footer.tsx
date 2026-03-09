@@ -10,6 +10,7 @@ export const Footer = memo(function Footer() {
       { label: 'Browse Mentors', path: '/mentors' },
       { label: 'Learning Tracks', path: '/tracks' },
       { label: 'Open Library', path: '/library' },
+      { label: 'Blog', path: '/blog' },
       { label: 'Success Stories', path: '/#opportunities' },
       { label: 'Pricing', path: '/#pricing' }
     ],
