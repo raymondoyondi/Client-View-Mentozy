@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, X, ImageIcon, Loader2 } from 'lucide-react';
 import { getSupabase } from '../../lib/supabase';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ interface BlogPost {
 }
 
 export function BlogPage() {
+    const navigate = useNavigate();
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [isWriting, setIsWriting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -263,7 +265,7 @@ export function BlogPage() {
                 ) : (
                     <div className="flex flex-col gap-14">
                         {posts.map((post) => (
-                            <article key={post.id} className="flex flex-col sm:flex-row gap-8 items-center sm:items-start group border-b border-gray-100 pb-12 last:border-0 hover:opacity-80 transition-opacity cursor-pointer">
+                            <article onClick={() => navigate(`/blog/${post.id}`)} key={post.id} className="flex flex-col sm:flex-row gap-8 items-center sm:items-start group border-b border-gray-100 pb-12 last:border-0 hover:opacity-80 transition-opacity cursor-pointer">
                                 <div className="flex-1 w-full order-2 sm:order-1">
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">

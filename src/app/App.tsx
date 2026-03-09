@@ -16,6 +16,7 @@ const TracksPage = lazy(() => import('./pages/TracksPage').then(module => ({ def
 const AboutPage = lazy(() => import('./pages/AboutPage').then(module => ({ default: module.AboutPage })));
 const LibraryPage = lazy(() => import('./pages/LibraryPage').then(module => ({ default: module.LibraryPage })));
 const BlogPage = lazy(() => import('./pages/BlogPage').then(module => ({ default: module.BlogPage })));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then(module => ({ default: module.BlogPostPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then(module => ({ default: module.ContactPage })));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(module => ({ default: module.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage').then(module => ({ default: module.TermsOfServicePage })));
@@ -129,6 +130,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:id" element={<BlogPostPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
