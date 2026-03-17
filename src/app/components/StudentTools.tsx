@@ -294,20 +294,6 @@ export const StudentTools = () => {
                         exit={{ opacity: 0, x: -20 }}
                         className="space-y-8"
                       >
-                        <div className="p-6 bg-amber-500 rounded-[2.5rem] text-white shadow-xl shadow-amber-500/20 relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-                          <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-1">Weekly Goal</h4>
-                          <p className="text-lg font-bold leading-tight mb-4">Complete 3 Course Modules</p>
-                          <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: '65%' }}
-                              className="bg-white h-full rounded-full" 
-                            />
-                          </div>
-                          <p className="text-[10px] font-bold mt-2 opacity-80">65% OF TARGET ACHIEVED</p>
-                        </div>
-                        
                         <div className="space-y-3">
                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] ml-2 mb-4">Quick Shortcuts</h4>
                            {importantLinks.map((link: any, i) => (
