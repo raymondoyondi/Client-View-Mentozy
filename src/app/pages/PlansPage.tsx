@@ -4,16 +4,16 @@ import { Link } from 'react-router-dom';
 
 const studentPlans = [
   {
-    name: 'Free',
+    name: 'Starter',
     price: '$0',
     period: '/month',
-    description: 'Perfect for getting started',
+    description: 'Everything you need to join the global tech conversation.',
     features: [
-      { name: '0 Live Minutes', included: true },
-      { name: 'Access to Community', included: true },
-      { name: 'Basic Practice Material', included: true },
-      { name: 'Mentor Group Calls', included: false },
-      { name: 'Course Access', included: false },
+      { name: 'Access to Mentozy Open Library', included: true },
+      { name: 'Join Public Community Forums', included: true },
+      { name: 'View Elite Mentor Profiles', included: true },
+      { name: 'Book 1-on-1 Sessions (Standard Rate)', included: true },
+      { name: 'General Hackathon Updates', included: true },
     ],
     cta: 'Get Started',
     popular: false,
@@ -23,13 +23,12 @@ const studentPlans = [
     name: 'Premium',
     price: '$30',
     period: '/month',
-    description: 'For serious learners',
+    description: 'Accelerate your growth with priority access and exclusive feedback.',
     features: [
-      { name: '100 Live Minutes', included: true },
-      { name: 'Access to Community', included: true },
-      { name: 'All Practice Material', included: true },
-      { name: 'Mentor Group Calls', included: true },
-      { name: 'Basic Course Access', included: true },
+      { name: 'Priority Booking (48-Hour Head Start on Mentor Calendars)', included: true },
+      { name: '10% Off All 1-on-1 Mentor Sessions', included: true },
+      { name: '1x Monthly Asynchronous Resume or Code Review', included: true },
+      { name: 'Access to 1 Live Group Masterclass per Month', included: true },
     ],
     cta: 'Subscribe Now',
     popular: true,
@@ -39,96 +38,80 @@ const studentPlans = [
     name: 'Ultra',
     price: '$60',
     period: '/month',
-    description: 'Accelerate your growth',
+    description: 'The VIP pipeline. Maximum access to top-tier engineers and referrals.',
     features: [
-      { name: '200 Live Minutes', included: true },
-      { name: 'Priority Community Access', included: true },
-      { name: 'Advanced Practice Material', included: true },
-      { name: 'Weekly Group Calls', included: true },
-      { name: 'Full Course Access', included: true },
+      { name: 'Exclusive Access to the FAANG Opportunity & Referral Board', included: true },
+      { name: 'First-In-Line Booking (72-Hour Head Start on Mentor Calendars)', included: true },
+      { name: '20% Off All 1-on-1 Mentor Sessions', included: true },
+      { name: 'Unlimited Live Group Masterclass Access', included: true },
+      { name: 'Fast-Track Priority for Mentozy Hackathons', included: true },
     ],
     cta: 'Go Ultra',
     popular: false,
     color: 'indigo'
-  },
-  {
-    name: 'Unlimited',
-    price: '$100',
-    period: '/month',
-    description: 'Maximum potential',
-    features: [
-      { name: 'Unlimited Live Minutes*', included: true },
-      { name: 'VIP Community Access', included: true },
-      { name: '1-on-1 Coaching', included: true },
-      { name: 'Daily Group Calls', included: true },
-      { name: 'All Courses + Certs', included: true },
-    ],
-    cta: 'Contact Sales',
-    popular: false,
-    color: 'rose'
   }
 ];
 
 const teacherPlans = [
   {
-    name: 'Free',
+    name: 'Elite Individual',
     price: '$0',
     period: '/month',
-    description: 'Individual mentor',
+    description: 'Zero upfront cost. Perfect for elite solo mentors and industry executives.',
     features: [
-      { name: '8% commission on sessions', included: true },
-      { name: '8% commission on courses', included: true },
-      { name: 'Staff dashboards', included: false },
-      { name: 'Virtual events', included: false },
-      { name: 'Student community', included: false },
+      { name: '1 Individual Mentor Dashboard', included: true },
+      { name: '8% Commission on Sessions & Courses', included: true },
+      { name: 'Global Calendar Syncing', included: true },
+      { name: 'Automated Payment Processing', included: true },
+      { name: 'Standard Search Visibility', included: true },
     ],
     cta: 'Get Started',
     popular: false,
     color: 'gray'
   },
   {
-    name: 'Premium',
+    name: 'Premium Squad',
     price: '$50',
     period: '/month',
-    description: 'For organisations',
+    description: 'Manage your entire coaching team under one unified platform.',
     features: [
-      { name: 'Single organisation (Online only)', included: true },
-      { name: '5 staff + 1 admin dashboard', included: true },
-      { name: '8% commission on fees', included: true },
-      { name: 'Virtual events', included: false },
-      { name: 'Student community', included: false },
+      { name: '5 Staff Dashboards', included: true },
+      { name: '8% Commission on Sessions & Courses', included: true },
+      { name: 'Centralized Agency Payouts', included: true },
+      { name: 'Team Scheduling & unified Calendar', included: true },
+      { name: 'Basic Revenue Analytics', included: true },
     ],
     cta: 'Subscribe Now',
     popular: true,
     color: 'amber'
   },
   {
-    name: 'Ultra',
+    name: 'Ultra Agency',
     price: '$95',
     period: '/month',
-    description: 'Online/offline schools',
+    description: 'Scale your academy with priority student visibility and advanced tools.',
     features: [
-      { name: 'Online & offline schools allowed', included: true },
-      { name: '12 staff + 1 admin dashboard', included: true },
-      { name: 'Virtual events can be posted', included: true },
-      { name: '8% commission on fees', included: true },
-      { name: 'Student community', included: false },
+      { name: '8 Staff Dashboards', included: true },
+      { name: '8% Commission on Sessions & Courses', included: true },
+      { name: 'Priority Algorithmic Placement (Rank higher in Mentozy student search)', included: true },
+      { name: 'Advanced Agency Revenue Analytics', included: true },
+      { name: 'Everything in Premium Squad', included: true },
     ],
     cta: 'Go Ultra',
     popular: false,
     color: 'indigo'
   },
   {
-    name: 'Unlimited',
+    name: 'Enterprise',
     price: '$150',
     period: '/month',
-    description: 'Everything you need',
+    description: 'Maximum infrastructure for large educational institutions and bootcamps.',
     features: [
-      { name: 'Unlimited staff & admin dashboards', included: true },
-      { name: 'Can create student community', included: true },
-      { name: 'Recommended inst. on landing page', included: true },
-      { name: 'Virtual events can be posted', included: true },
-      { name: '8% commission on fees', included: true },
+      { name: '12 Staff Dashboards', included: true },
+      { name: '8% Commission on Sessions & Courses', included: true },
+      { name: 'Dedicated Mentozy Account Manager', included: true },
+      { name: 'Custom Agency Onboarding Support', included: true },
+      { name: 'Everything in Ultra Agency', included: true },
     ],
     cta: 'Contact Sales',
     popular: false,
@@ -179,7 +162,7 @@ export function PlansPage() {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <div className={`grid md:grid-cols-2 ${activePlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl' : 'lg:grid-cols-4 max-w-7xl'} gap-8 mx-auto`}>
           {activePlans.map((plan) => (
             <div
               key={plan.name}

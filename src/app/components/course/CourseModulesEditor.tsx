@@ -250,7 +250,7 @@ export function CourseModulesEditor({ modules, onChange }: CourseModulesEditorPr
                                 <label className="text-sm font-bold text-gray-700">Module Title *</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. English - Alphabet & Phonics"
+                                    placeholder="e.g. Introduction to React Components"
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                     value={module.title}
                                     onChange={e => updateModule(module.id, { title: e.target.value })}
@@ -261,7 +261,7 @@ export function CourseModulesEditor({ modules, onChange }: CourseModulesEditorPr
                             <div className="space-y-2 md:col-span-2">
                                 <label className="text-sm font-bold text-gray-700">Module Description *</label>
                                 <textarea
-                                    placeholder="Short explanation of what kids will learn."
+                                    placeholder="Short explanation of the module's core focus."
                                     rows={2}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none"
                                     value={module.description}
@@ -623,7 +623,7 @@ export function CourseModulesEditor({ modules, onChange }: CourseModulesEditorPr
                                                                         </label>
                                                                         <p className="text-[10px] text-amber-600 mb-2 leading-tight">
                                                                             Personalize what the child sees when they select an answer. <br />
-                                                                            Example: "Remember, A says 'aa' like apple 🍎"
+                                                                            Example: "Remember to re-render the component when state changes 🔄"
                                                                         </p>
                                                                         <textarea
                                                                             placeholder="Your custom message here..."

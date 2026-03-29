@@ -71,10 +71,11 @@ export interface Track {
     duration: string; // Mapped from duration_weeks (e.g. "X Weeks")
     projects: number;
     description: string;
-    modules: string[]; // Mapped from track_modules titles
+    modules: any[]; // Changed to hold full module objects instead of just titles.
     image_url?: string;
     status?: 'published' | 'draft';
     creator_id?: string;
+    price?: number;
 }
 
 export interface Profile {
@@ -222,9 +223,9 @@ export const getTracks = async (): Promise<Track[]> => {
         const { data, error } = await supabase
             .from('tracks')
             .select(`
-    *,
-    track_modules(title, module_order)
-        `)
+                *,
+                track_modules(*)
+            `)
             .order('module_order', { foreignTable: 'track_modules', ascending: true });
 
         if (error) {
@@ -236,7 +237,7 @@ export const getTracks = async (): Promise<Track[]> => {
             return [];
         }
 
-        const dbTracks = data as unknown as DBTrack[];
+        const dbTracks = data as unknown as any[];
 
         const mappedTracks: Track[] = dbTracks.map((item) => ({
             id: item.id,
@@ -245,8 +246,9 @@ export const getTracks = async (): Promise<Track[]> => {
             duration: item.duration_weeks ? `${item.duration_weeks} Weeks` : 'Self-paced',
             projects: 0,
             description: item.description || '',
-            modules: item.track_modules?.map((m) => m.title) || [],
-            image_url: item.image_url || undefined
+            modules: item.track_modules?.map((m: any) => m.content || { title: m.title }) || [],
+            image_url: item.image_url || undefined,
+            price: item.price !== undefined ? parseFloat(item.price) : 0
         }));
 
         return mappedTracks;
@@ -312,7 +314,8 @@ export const createCourse = async (
             level: courseData.level || 'All Levels',
             description: courseData.description,
             duration_weeks: parseInt((courseData.duration || '4').split(' ')[0]) || 4,
-            image_url: courseData.image_url
+            image_url: courseData.image_url,
+            price: courseData.price ? parseFloat(courseData.price as unknown as string) : 0
         };
 
         if (creatorId) {
@@ -1020,3 +1023,142 @@ export const updateMentorStatus = async (userId: string, status: 'active' | 'una
         return false;
     }
 };
+
+// --- ORGANIZATION TEACHER INVITES ---
+export const searchMentorsForOrg = async (query: string): Promise<Profile[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase || !query || query.length < 2) return [];
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'mentor')
+            .ilike('full_name', `%${query}%`)
+            .limit(10);
+            
+        if (error) throw error;
+        return data as Profile[];
+    } catch(e) {
+        console.error("Error searching mentors:", e);
+        return [];
+    }
+}
+
+export const sendOrgMentorInvite = async (orgId: string, mentorId: string): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return false;
+        
+        // Check if already a teacher
+        const { count: teacherCount } = await supabase.from('org_teachers').select('id', {count: 'exact', head: true}).eq('org_id', orgId).eq('mentor_id', mentorId);
+        if (teacherCount && teacherCount > 0) return false; // Already a teacher
+        
+        // Remove old stranded invites
+        await supabase.from('org_invitations').delete().eq('org_id', orgId).eq('mentor_id', mentorId);
+        
+        const { error } = await supabase
+            .from('org_invitations')
+            .insert({
+                org_id: orgId,
+                mentor_id: mentorId,
+                status: 'pending'
+            });
+            
+        if (error) throw error;
+        return true;
+    } catch(e) {
+        console.error("Error sending org invite:", e);
+        return false;
+    }
+}
+
+export const getPendingOrgInvitesForMentor = async (mentorId: string): Promise<any[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return [];
+        
+        const { data, error } = await supabase
+            .from('org_invitations')
+            .select('id, org_id, mentor_id, status, created_at, org:profiles!org_invitations_org_id_fkey(full_name, avatar_url)')
+            .eq('mentor_id', mentorId)
+            .eq('status', 'pending');
+            
+        if (error) {
+            console.error("error:", error);
+            // Note: If foreign key is ambiguous, we'll try without explicit fkey mapping
+            const fallback = await supabase.from('org_invitations').select('id, org_id, mentor_id, status, created_at').eq('mentor_id', mentorId).eq('status', 'pending');
+            return fallback.data || [];
+        }
+        return data || [];
+    } catch(e) {
+        console.error("Error getting pending org invites:", e);
+        return [];
+    }
+}
+
+export const respondToOrgInvite = async (inviteId: string, orgId: string, mentorId: string, accept: boolean): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return false;
+        
+        const status = accept ? 'accepted' : 'rejected';
+        const { error } = await supabase
+            .from('org_invitations')
+            .update({ status })
+            .eq('id', inviteId);
+            
+        if (error) throw error;
+        
+        if (accept) {
+            // Add to org_teachers
+            const { error: insertError } = await supabase.from('org_teachers').insert({
+                org_id: orgId,
+                mentor_id: mentorId,
+                status: 'Active',
+                role: 'Instructor',
+                department: 'General'
+            });
+            if (insertError) throw insertError;
+        }
+        
+        return true;
+    } catch(e) {
+        console.error("Error responding to org invite:", e);
+        return false;
+    }
+}
+
+export const getOrgTeachers = async (orgId: string): Promise<any[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return [];
+        
+        const { data, error } = await supabase
+            .from('org_teachers')
+            .select('id, status, department, role, joined_at, mentor_id, mentor:profiles!mentor_id(full_name, email, avatar_url, phone)')
+            .eq('org_id', orgId);
+            
+        if (error) {
+            console.error(error);
+            return [];
+        }
+        
+        return (data || []).map((t: any) => ({
+            id: t.id,
+            mentor_id: t.mentor_id,
+            name: t.mentor?.full_name || 'Teacher',
+            email: t.mentor?.email || 'No email',
+            phone: t.mentor?.phone || '',
+            avatar: t.mentor?.avatar_url,
+            department: t.department,
+            role: t.role,
+            status: t.status,
+            joinDate: new Date(t.joined_at).toISOString().split('T')[0],
+            classes: 0
+        }));
+    } catch(e) {
+        console.error("Error fetching org teachers:", e);
+        return [];
+    }
+}

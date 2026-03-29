@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getUserProfile, getMentorBookings, updateBookingStatus, acceptBooking, updateMentorStatus, Profile, Booking } from '../../lib/api';
+import { getUserProfile, getMentorBookings, updateBookingStatus, acceptBooking, updateMentorStatus, Profile, Booking, getPendingOrgInvitesForMentor, respondToOrgInvite } from '../../lib/api';
 import { getSupabase } from '../../lib/supabase';
 import {
     Loader2, Calendar, Clock, User, CheckCircle2,
@@ -23,6 +23,7 @@ export function MentorDashboardPage() {
     const [mentorDetails, setMentorDetails] = useState<any>(null); // { hourly_rate, company }
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [orgInvites, setOrgInvites] = useState<any[]>([]);
 
     // Modal State
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -54,10 +55,11 @@ export function MentorDashboardPage() {
             try {
                 const supabase = getSupabase();
 
-                // 1. Parallel Fetch: Profile & Bookings
-                const [userProfile, userBookings] = await Promise.all([
+                // 1. Parallel Fetch: Profile & Bookings & Invites
+                const [userProfile, userBookings, invitesData] = await Promise.all([
                     getUserProfile(user.id),
-                    getMentorBookings(user.id)
+                    getMentorBookings(user.id),
+                    getPendingOrgInvitesForMentor(user.id)
                 ]);
 
                 if (userProfile) {
@@ -74,6 +76,7 @@ export function MentorDashboardPage() {
                 }
 
                 setBookings(userBookings || []);
+                setOrgInvites(invitesData || []);
 
                 // 2. Fetch Mentor Details (Rate)
                 if (supabase) {
@@ -108,6 +111,22 @@ export function MentorDashboardPage() {
             }
         } catch (error) {
             toast.error("Action failed. Please try again.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleOrgInviteResponse = async (inviteId: string, orgId: string, accept: boolean) => {
+        if(!user) return;
+        setProcessingId(inviteId);
+        try {
+            const success = await respondToOrgInvite(inviteId, orgId, user.id, accept);
+            if(success) {
+                toast.success(accept ? "Joined Organization successfully!" : "Invitation declined.");
+                setOrgInvites(prev => prev.filter(i => i.id !== inviteId));
+            } else {
+                toast.error("Failed to respond to invitation.");
+            }
         } finally {
             setProcessingId(null);
         }
@@ -219,6 +238,46 @@ export function MentorDashboardPage() {
 
                 {/* Left Column: Requests & Schedule */}
                 <div className="lg:col-span-2 space-y-8">
+
+                    {/* Organization Invites */}
+                    {orgInvites.length > 0 && (
+                        <div className="mb-2">
+                            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                Organization Invites <span className="text-sm font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">{orgInvites.length} pending</span>
+                            </h2>
+                            <div className="space-y-4">
+                                {orgInvites.map(invite => (
+                                    <div key={invite.id} className="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-amber-100 flex flex-col items-center justify-center font-bold overflow-hidden flex-shrink-0">
+                                                {invite.org?.avatar_url ? <img src={invite.org.avatar_url} className="w-full h-full object-cover" /> : <User className="text-amber-500 w-6 h-6" />}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-900">{invite.org?.full_name || 'An Organization'}</h4>
+                                                <p className="text-sm text-gray-600">Invited you to join their teaching staff.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 w-full sm:w-auto">
+                                            <button
+                                                onClick={() => handleOrgInviteResponse(invite.id, invite.org_id, false)}
+                                                disabled={processingId === invite.id}
+                                                className="flex-1 sm:flex-none px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
+                                            >
+                                                Decline
+                                            </button>
+                                            <button
+                                                onClick={() => handleOrgInviteResponse(invite.id, invite.org_id, true)}
+                                                disabled={processingId === invite.id}
+                                                className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-200"
+                                            >
+                                                {processingId === invite.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Accept"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Pending Requests */}
                     <div>

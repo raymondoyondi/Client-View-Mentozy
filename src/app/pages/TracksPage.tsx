@@ -105,7 +105,14 @@ export function TracksPage() {
                 <div key={index} className="bg-white border border-gray-200 rounded-2xl p-8 hover:border-amber-200 hover:shadow-lg transition-all duration-300">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{track.title}</h2>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 className="text-2xl font-bold text-gray-900">{track.title}</h2>
+                        {track.price !== undefined && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${track.price === 0 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
+                              {track.price === 0 ? 'Free' : `$${track.price}`}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-600 leading-relaxed max-w-2xl">{track.description}</p>
                     </div>
                     <div className="flex flex-col gap-2 min-w-[140px]">
@@ -122,14 +129,37 @@ export function TracksPage() {
                   </div>
 
                   <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide">Syllabus Highlights</h3>
-                    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {track.modules.map((mod, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                          <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                          {mod}
-                        </div>
-                      ))}
+                    <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide">Detailed Curriculum & Objectives</h3>
+                    <div className="space-y-4">
+                      {track.modules.map((mod: any, i: number) => {
+                        const title = typeof mod === 'string' ? mod : (mod.title || 'Untitled Module');
+                        const description = typeof mod === 'object' && mod.description ? mod.description : null;
+                        const objectives = typeof mod === 'object' && Array.isArray(mod.objectives) ? mod.objectives : [];
+                        const duration = typeof mod === 'object' && mod.duration ? mod.duration : null;
+
+                        return (
+                          <div key={i} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs flex-shrink-0">{i + 1}</div>
+                                  {title}
+                                </h4>
+                                {duration && <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">{duration}</span>}
+                            </div>
+                            {description && <p className="text-sm text-gray-600 mb-3">{description}</p>}
+                            {objectives.length > 0 && (
+                                <ul className="space-y-1">
+                                    {objectives.map((obj: string, j: number) => (
+                                        <li key={j} className="flex items-start gap-2 text-xs text-gray-500">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                                            {obj}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
