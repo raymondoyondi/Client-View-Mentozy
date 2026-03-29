@@ -4,12 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import { Users, GraduationCap, DollarSign, UserPlus, Settings, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { getUserProfile } from '../../lib/api';
+import { getUserProfile, getOrgTeachers } from '../../lib/api';
 
 export function OrgDashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [staff] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
     const [orgProfile, setOrgProfile] = useState<any>(null);
 
     // Fetch org profile details
@@ -30,6 +30,9 @@ export function OrgDashboardPage() {
 
             const { data } = await supabase.from('mentors').select('company, bio').eq('user_id', user.id).single();
             if (data) setOrgProfile(data);
+
+            const teachersData = await getOrgTeachers(user.id);
+            if (teachersData) setStaff(teachersData);
         };
         fetchOrgDetails();
     }, [user, navigate]);
@@ -58,10 +61,10 @@ export function OrgDashboardPage() {
                         <p className="text-blue-100 text-lg">Manage your entire institute from one place.</p>
                     </div>
                     {canManageStaff && (
-                        <button className="flex items-center gap-2 px-5 py-2.5 bg-white/20 text-white rounded-full font-semibold hover:bg-white/30 transition-colors backdrop-blur-sm self-start md:self-auto">
+                        <Link to="/org-teachers" className="flex items-center gap-2 px-5 py-2.5 bg-white/20 text-white rounded-full font-semibold hover:bg-white/30 transition-colors backdrop-blur-sm self-start md:self-auto">
                             <UserPlus className="w-5 h-5" />
                             Add Teacher
-                        </button>
+                        </Link>
                     )}
                 </div>
                 {/* Decoration Circles */}
@@ -146,7 +149,7 @@ export function OrgDashboardPage() {
                         </div>
                         {canManageStaff && (
                             <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
-                                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View All Staff &rarr;</button>
+                                <Link to="/org-teachers" className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View All Staff &rarr;</Link>
                             </div>
                         )}
                     </div>

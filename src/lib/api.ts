@@ -1136,7 +1136,7 @@ export const getOrgTeachers = async (orgId: string): Promise<any[]> => {
         
         const { data, error } = await supabase
             .from('org_teachers')
-            .select('id, status, department, role, joined_at, mentor_id, mentor:profiles!mentor_id(full_name, email, avatar_url, phone)')
+            .select('id, status, department, role, joined_at, mentor_id, mentor:profiles!mentor_id(full_name, avatar_url, phone)')
             .eq('org_id', orgId);
             
         if (error) {
