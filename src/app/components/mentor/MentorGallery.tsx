@@ -1,4 +1,4 @@
-import { Search, Filter, Star, Linkedin, Loader2, Calendar, User, Building2, ShieldCheck } from 'lucide-react';
+import { Search, Filter, Linkedin, Loader2, Calendar, User, Building2, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { getMentors, Mentor, createBooking } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -177,16 +177,8 @@ export function MentorGallery() {
 
                                         <div className="flex items-center justify-between py-6 px-4 bg-gray-50/50 rounded-3xl border border-gray-100/50">
                                             <div className="text-center">
-                                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">Rating</p>
-                                                <div className="flex items-center gap-1">
-                                                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                                    <span className="text-base font-black text-gray-900">{mentor.rating}</span>
-                                                </div>
-                                            </div>
-                                            <div className="w-px h-8 bg-gray-200" />
-                                            <div className="text-center">
-                                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">Reviews</p>
-                                                <p className="text-base font-black text-gray-900">{mentor.reviews}</p>
+                                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">Experience</p>
+                                                <p className="text-base font-black text-gray-900">{mentor.years_experience || 5}+ <span className="text-xs text-gray-400 font-medium whitespace-nowrap">yrs</span></p>
                                             </div>
                                             <div className="w-px h-8 bg-gray-200" />
                                             <div className="text-center">

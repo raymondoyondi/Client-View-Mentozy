@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { Mentor } from '../../../lib/api';
-import { User, Building2, MapPin, Star, ShieldCheck, Award, Briefcase, Zap, Calendar } from 'lucide-react';
+import { User, Building2, Briefcase, Zap, Calendar } from 'lucide-react';
 
 interface MentorProfileModalProps {
     isOpen: boolean;
@@ -53,20 +53,14 @@ export function MentorProfileModal({ isOpen, onClose, mentor, onBook }: MentorPr
                 <div className="p-8 space-y-8">
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="text-center space-y-1">
-                            <div className="flex items-center justify-center gap-1 text-amber-500 font-black text-lg">
-                                <Star className="w-4 h-4 fill-current" /> {mentor.rating}
-                            </div>
-                            <div className="text-[10px] uppercase font-bold text-gray-400">Rating</div>
-                        </div>
-                        <div className="text-center space-y-1 border-x border-gray-200">
-                            <div className="font-black text-gray-900 text-lg">{mentor.reviews}</div>
-                            <div className="text-[10px] uppercase font-bold text-gray-400">Reviews</div>
-                        </div>
-                        <div className="text-center space-y-1">
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="text-center space-y-1 border-r border-gray-200">
                             <div className="font-black text-gray-900 text-lg">{mentor.years_experience ? `${mentor.years_experience}+` : '5+'} <span className="text-xs text-gray-400 font-medium">yrs</span></div>
                             <div className="text-[10px] uppercase font-bold text-gray-400">Experience</div>
+                        </div>
+                        <div className="text-center space-y-1">
+                            <div className="font-black text-gray-900 text-lg">${mentor.hourly_rate || 150} <span className="text-xs text-gray-400 font-medium">/hr</span></div>
+                            <div className="text-[10px] uppercase font-bold text-gray-400">Hourly Rate</div>
                         </div>
                     </div>
 

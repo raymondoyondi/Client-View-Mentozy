@@ -48,8 +48,6 @@ export interface Mentor {
     role: string;
     company: string;
     expertise: string[];
-    rating: number;
-    reviews: number;
     image: string;
     initials: string;
     bio?: string;
@@ -192,8 +190,6 @@ export const getMentors = async (): Promise<Mentor[]> => {
                 role: role,
                 company: item.company || 'Global Expert',
                 expertise: item.mentor_expertise?.map((e) => e.skill) || ["Technology"],
-                rating: parseFloat(rating.toFixed(1)),
-                reviews: item.total_reviews || Math.floor(Math.random() * 50) + 10,
                 image: item.profiles?.avatar_url || 'bg-amber-500/10 text-amber-600',
                 initials: name.split(' ').map((n: string) => n[0]).join('').substring(0, 2),
                 bio: bioData ? undefined : item.bio || undefined,
@@ -585,8 +581,6 @@ export const getStudentBookings = async (userId: string): Promise<Booking[]> => 
                     role: m.bio ? m.bio.split('.')[0] : 'Expert',
                     company: m.company || 'Independent',
                     expertise: m.mentor_expertise?.map((e: any) => e.skill) || [],
-                    rating: m.rating || 0,
-                    reviews: m.total_reviews || 0,
                     image: m.profiles?.avatar_url || '',
                     initials: '??'
                 };
