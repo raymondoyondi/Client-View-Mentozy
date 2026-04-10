@@ -1164,7 +1164,7 @@ export const getOrgStudents = async (orgId: string): Promise<any[]> => {
         
         const { data, error } = await supabase
             .from('org_students')
-            .select('id, status, grade, joined_at, student_id, student:profiles!student_id(full_name, avatar_url, email)')
+            .select('id, status, grade, joined_at, student_id, student:profiles!student_id(full_name, avatar_url)')
             .eq('org_id', orgId);
             
         if (error) {
@@ -1236,4 +1236,58 @@ export const sendOrgStudentInvite = async (orgId: string, studentId: string): Pr
         console.error("Error sending org student invite:", e);
         return false;
     }
-}
+}
+
+export const getPendingOrgInvitesForStudent = async (studentId: string): Promise<any[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return [];
+        
+        const { data, error } = await supabase
+            .from('org_student_invitations')
+            .select('id, org_id, student_id, status, created_at, org:profiles!org_id(full_name, avatar_url)')
+            .eq('student_id', studentId)
+            .eq('status', 'pending');
+            
+        if (error) {
+            console.error("Error getting pending org student invites:", error);
+            return [];
+        }
+        return data || [];
+    } catch(e) {
+        console.error("Error getting pending org student invites:", e);
+        return [];
+    }
+}
+
+export const respondToOrgStudentInvite = async (inviteId: string, orgId: string, studentId: string, accept: boolean): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return false;
+        
+        const status = accept ? 'accepted' : 'rejected';
+        const { error } = await supabase
+            .from('org_student_invitations')
+            .update({ status })
+            .eq('id', inviteId);
+            
+        if (error) throw error;
+        
+        if (accept) {
+            // Add to org_students
+            const { error: insertError } = await supabase.from('org_students').insert({
+                org_id: orgId,
+                student_id: studentId,
+                status: 'Active',
+                grade: 'General'
+            });
+            if (insertError) throw insertError;
+        }
+        
+        return true;
+    } catch(e) {
+        console.error("Error responding to org student invite:", e);
+        return false;
+    }
+}
+

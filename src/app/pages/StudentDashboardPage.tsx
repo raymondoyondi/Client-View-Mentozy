@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import {
-    BookOpen, ChevronRight, Clock,
+     BookOpen, ChevronRight, Clock,
     Search,
-    Activity, Award, Zap
+    Activity, Award, Zap, Building2, Check, X, Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
-import { Enrollment, Profile, Booking, getStudentEnrollments, getUserProfile, getStudentBookings } from '../../lib/api';
+import { Enrollment, Profile, Booking, getStudentEnrollments, getUserProfile, getStudentBookings, getPendingOrgInvitesForStudent, respondToOrgStudentInvite } from '../../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from '../../components/ui/calendar';
 import { StudentBookingDetailsModal } from '../components/booking/StudentBookingDetailsModal';
+import { toast } from 'sonner';
 
 export function StudentDashboardPage() {
     const { user } = useAuth();
@@ -17,6 +18,7 @@ export function StudentDashboardPage() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [invites, setInvites] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Modal State
@@ -30,10 +32,11 @@ export function StudentDashboardPage() {
             setProfile(null);
 
             try {
-                const [profileData, enrollmentsData, bookingsData] = await Promise.all([
+                const [profileData, enrollmentsData, bookingsData, invitesData] = await Promise.all([
                     getUserProfile(user.id),
                     getStudentEnrollments(user.id),
-                    getStudentBookings(user.id)
+                    getStudentBookings(user.id),
+                    getPendingOrgInvitesForStudent(user.id)
                 ]);
 
                 if (profileData) {
@@ -51,6 +54,7 @@ export function StudentDashboardPage() {
 
                 if (enrollmentsData) setEnrollments(enrollmentsData);
                 if (bookingsData) setBookings(bookingsData);
+                if (invitesData) setInvites(invitesData);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
             } finally {
@@ -60,7 +64,22 @@ export function StudentDashboardPage() {
         loadDashboardData();
     }, [user]);
 
-    // Derived Statistics
+    const handleRespondInvite = async (invite: any, accept: boolean) => {
+        try {
+            const success = await respondToOrgStudentInvite(invite.id, invite.org_id, user!.id, accept);
+            if (success) {
+                toast.success(accept ? `Joined ${invite.org.full_name}!` : "Invitation declined.");
+                setInvites(prev => prev.filter(i => i.id !== invite.id));
+                // Reload dashboard data to show new organization if accepted (though organizations aren't shown much on student dash yet)
+            } else {
+                toast.error("Failed to respond to invitation.");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("An error occurred.");
+        }
+    };
+
     // Derived Statistics
     console.log("Dashboard Render: ", { profile, enrollments, bookings, loading });
 
@@ -141,6 +160,45 @@ export function StudentDashboardPage() {
                 <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/10 rounded-full blur-xl"></div>
             </div>
+
+            {/* Organization Invitations Banner */}
+            {invites.length > 0 && (
+                <div className="mb-8 space-y-4">
+                    {invites.map((invite) => (
+                        <div key={invite.id} className="relative overflow-hidden bg-white border-2 border-indigo-100 rounded-3xl p-6 shadow-lg shadow-indigo-100/20 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                                    <Building2 className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Bell className="w-4 h-4 text-amber-500 animate-bounce" />
+                                        <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">New Invitation</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900">
+                                        Invite to join <span className="text-indigo-600">{invite.org?.full_name}</span>
+                                    </h3>
+                                    <p className="text-sm text-gray-500">Would you like to join this organization as a student?</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 w-full md:w-auto">
+                                <button
+                                    onClick={() => handleRespondInvite(invite, true)}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200"
+                                >
+                                    <Check className="w-5 h-5" /> Accept
+                                </button>
+                                <button
+                                    onClick={() => handleRespondInvite(invite, false)}
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                                >
+                                    <X className="w-5 h-5" /> Decline
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Stats Overview */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -323,4 +381,4 @@ export function StudentDashboardPage() {
             />
         </DashboardLayout >
     );
-}
+}
