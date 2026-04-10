@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, CreditCard, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Lock, CreditCard, CheckCircle2, XCircle, Zap } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -16,6 +16,13 @@ interface PlanState {
 }
 
 type PaymentStatus = 'idle' | 'loading' | 'success' | 'failed';
+
+const TEST_CARD = {
+  name: 'Test User',
+  number: '4111 1111 1111 1111',
+  expiry: '12/26',
+  cvv: '123',
+};
 
 function detectNetwork(num: string) {
   const n = num.replace(/\s/g, '');
@@ -64,9 +71,16 @@ export function PaymentPage() {
     expiry.length === 5 &&
     cvv.length >= 3;
 
+  const fillTestCard = () => {
+    setCardName(TEST_CARD.name);
+    setCardNumber(TEST_CARD.number);
+    setExpiry(TEST_CARD.expiry);
+    setCvv(TEST_CARD.cvv);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid) return;
+    if (!isFormValid || status === 'loading') return;
 
     setStatus('loading');
     setErrorMsg('');
@@ -89,15 +103,18 @@ export function PaymentPage() {
         order_id: order.id,
         notes: plan ? { plan_name: plan.planName, plan_type: plan.planType } : {},
         theme: { color: '#f59e0b' },
+        retry: { enabled: false },
       });
 
+      // Register listeners BEFORE createPayment
       rzp.on('payment.success', function (resp: any) {
-        setPaymentId(resp.razorpay_payment_id);
+        setPaymentId(resp.razorpay_payment_id ?? order.id);
         setStatus('success');
       });
 
       rzp.on('payment.error', function (err: any) {
-        setErrorMsg(err?.error?.description || 'Payment failed. Please check your card details.');
+        const msg = err?.error?.description || err?.error?.reason || 'Payment declined. Please check your card details.';
+        setErrorMsg(msg);
         setStatus('failed');
       });
 
@@ -113,11 +130,11 @@ export function PaymentPage() {
           cvv,
           name: cardName,
         },
-        email: '',
-        contact: '',
+        email: 'test@mentozy.app',
+        contact: '9999999999',
       });
     } catch (err) {
-      setErrorMsg('Could not connect to payment server. Please try again.');
+      setErrorMsg('Could not connect to the payment server. Please try again.');
       setStatus('failed');
     }
   };
@@ -126,13 +143,24 @@ export function PaymentPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center space-y-4">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-10 h-10 text-green-500" />
+          </div>
           <h2 className="text-2xl font-bold text-gray-900">Payment Successful!</h2>
-          {plan && <p className="text-gray-600">You are now on the <span className="font-semibold text-amber-600">{plan.planName}</span> plan.</p>}
-          <p className="text-xs text-gray-400 font-mono break-all">Payment ID: {paymentId}</p>
+          {plan && (
+            <p className="text-gray-600">
+              You are now on the{' '}
+              <span className="font-semibold text-amber-600">{plan.planName}</span> plan.
+            </p>
+          )}
+          {paymentId && (
+            <p className="text-xs text-gray-400 font-mono bg-gray-50 rounded-lg p-2 break-all">
+              Payment ID: {paymentId}
+            </p>
+          )}
           <button
             onClick={() => navigate('/plans')}
-            className="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition-colors"
+            className="mt-2 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Back to Plans
           </button>
@@ -143,7 +171,7 @@ export function PaymentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md space-y-6">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md space-y-5">
 
         <button
           onClick={() => navigate('/plans')}
@@ -190,6 +218,16 @@ export function PaymentPage() {
           </div>
         )}
 
+        {/* Test card helper */}
+        <button
+          type="button"
+          onClick={fillTestCard}
+          className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 text-sm font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          <Zap className="w-4 h-4" />
+          Fill Test Card Details
+        </button>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Card Details</div>
 
@@ -201,6 +239,7 @@ export function PaymentPage() {
               value={cardName}
               onChange={(e) => setCardName(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              autoComplete="cc-name"
               required
             />
           </div>
@@ -213,17 +252,18 @@ export function PaymentPage() {
                 inputMode="numeric"
                 placeholder="1234 5678 9012 3456"
                 value={cardNumber}
+                autoComplete="cc-number"
                 onChange={(e) => {
                   const formatted = formatCardNumber(e.target.value);
                   setCardNumber(formatted);
                   if (formatted.replace(/\s/g, '').length === 16) expiryRef.current?.focus();
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-16 text-gray-900 placeholder-gray-400 font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-20 text-gray-900 placeholder-gray-400 font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-400"
                 required
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {network ? (
-                  <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{network}</span>
+                  <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{network}</span>
                 ) : (
                   <CreditCard className="w-5 h-5 text-gray-300" />
                 )}
@@ -240,6 +280,7 @@ export function PaymentPage() {
                 inputMode="numeric"
                 placeholder="MM/YY"
                 value={expiry}
+                autoComplete="cc-exp"
                 onChange={(e) => {
                   const formatted = formatExpiry(e.target.value);
                   setExpiry(formatted);
@@ -258,6 +299,7 @@ export function PaymentPage() {
                 placeholder="•••"
                 maxLength={4}
                 value={cvv}
+                autoComplete="cc-csc"
                 onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
                 required
@@ -268,7 +310,7 @@ export function PaymentPage() {
           {status === 'failed' && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
               <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              {errorMsg}
+              <span>{errorMsg}</span>
             </div>
           )}
 
@@ -293,9 +335,6 @@ export function PaymentPage() {
           </button>
         </form>
 
-        <p className="text-xs text-gray-400 text-center">
-          Test card: 4111 1111 1111 1111 · Any future expiry · Any CVV
-        </p>
       </div>
     </div>
   );
