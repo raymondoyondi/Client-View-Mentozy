@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Check, X, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const studentPlans = [
   {
     name: 'Starter',
     price: '$0',
+    amountINR: 0,
     period: '/month',
     description: 'Everything you need to join the global tech conversation.',
     features: [
@@ -22,6 +29,7 @@ const studentPlans = [
   {
     name: 'Premium',
     price: '$30',
+    amountINR: 2499,
     period: '/month',
     description: 'Accelerate your growth with priority access and exclusive feedback.',
     features: [
@@ -37,6 +45,7 @@ const studentPlans = [
   {
     name: 'Ultra',
     price: '$60',
+    amountINR: 4999,
     period: '/month',
     description: 'The VIP pipeline. Maximum access to top-tier engineers and referrals.',
     features: [
@@ -56,6 +65,7 @@ const teacherPlans = [
   {
     name: 'Elite Individual',
     price: '$0',
+    amountINR: 0,
     period: '/month',
     description: 'Zero upfront cost. Perfect for elite solo mentors and industry executives.',
     features: [
@@ -72,6 +82,7 @@ const teacherPlans = [
   {
     name: 'Premium Squad',
     price: '$50',
+    amountINR: 4199,
     period: '/month',
     description: 'Manage your entire coaching team under one unified platform.',
     features: [
@@ -88,6 +99,7 @@ const teacherPlans = [
   {
     name: 'Ultra Agency',
     price: '$95',
+    amountINR: 7999,
     period: '/month',
     description: 'Scale your academy with priority student visibility and advanced tools.',
     features: [
@@ -104,6 +116,7 @@ const teacherPlans = [
   {
     name: 'Enterprise',
     price: '$150',
+    amountINR: null,
     period: '/month',
     description: 'Maximum infrastructure for large educational institutions and bootcamps.',
     features: [
@@ -119,9 +132,79 @@ const teacherPlans = [
   }
 ];
 
+type Plan = (typeof studentPlans)[number] | (typeof teacherPlans)[number];
+
 export function PlansPage() {
   const [planType, setPlanType] = useState<'student' | 'teacher'>('student');
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const navigate = useNavigate();
   const activePlans = planType === 'student' ? studentPlans : teacherPlans;
+
+  const handlePlanClick = async (plan: Plan) => {
+    if (plan.cta === 'Contact Sales') {
+      navigate('/contact');
+      return;
+    }
+    if (plan.amountINR === 0) {
+      navigate('/signup');
+      return;
+    }
+
+    setLoadingPlan(plan.name);
+    try {
+      const response = await fetch('http://localhost:3001/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: plan.amountINR }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create order');
+
+      const order = await response.json();
+
+      const options = {
+        key: 'rzp_test_SbsDY1EgH8rPZb',
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Mentozy',
+        description: `${plan.name} Plan – Monthly Subscription`,
+        order_id: order.id,
+        handler: function (response: any) {
+          alert(
+            `Payment successful! You are now on the ${plan.name} plan.\nPayment ID: ${response.razorpay_payment_id}`
+          );
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: '',
+        },
+        notes: {
+          plan_name: plan.name,
+          plan_type: planType,
+        },
+        theme: {
+          color: '#f59e0b',
+        },
+        modal: {
+          ondismiss: function () {
+            alert('Payment cancelled. Your plan has not been changed.');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert(`Payment failed: ${response.error.description}`);
+      });
+      rzp.open();
+    } catch (err) {
+      alert('Could not initiate payment. Please try again shortly.');
+      console.error(err);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <div className="pt-24 pb-20 bg-gray-50 min-h-screen font-sans">
@@ -163,65 +246,83 @@ export function PlansPage() {
 
         {/* Plans Grid */}
         <div className={`grid md:grid-cols-2 ${activePlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl' : 'lg:grid-cols-4 max-w-7xl'} gap-8 mx-auto`}>
-          {activePlans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative bg-white rounded-3xl p-8 border hover:shadow-xl transition-all duration-300 flex flex-col
-                ${plan.popular ? 'border-amber-500 shadow-lg scale-105 z-10' : 'border-gray-200 shadow-sm'}
-              `}
-            >
-              {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                  Most Popular
-                </div>
-              )}
+          {activePlans.map((plan) => {
+            const isLoading = loadingPlan === plan.name;
+            return (
+              <div
+                key={plan.name}
+                className={`relative bg-white rounded-3xl p-8 border hover:shadow-xl transition-all duration-300 flex flex-col
+                  ${plan.popular ? 'border-amber-500 shadow-lg scale-105 z-10' : 'border-gray-200 shadow-sm'}
+                `}
+              >
+                {plan.popular && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                    Most Popular
+                  </div>
+                )}
 
-              <div className="mb-8">
-                <h3 className={`text-xl font-bold mb-2 text-${plan.color === 'gray' ? 'gray-900' : plan.color + '-600'}`}>
-                  {plan.name}
-                </h3>
-                <p className="text-gray-500 text-sm mb-6">{plan.description}</p>
-                <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-500 ml-1">{plan.period}</span>
+                <div className="mb-8">
+                  <h3 className={`text-xl font-bold mb-2 text-${plan.color === 'gray' ? 'gray-900' : plan.color + '-600'}`}>
+                    {plan.name}
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-6">{plan.description}</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-gray-500">{plan.period}</span>
+                  </div>
+                  {plan.amountINR ? (
+                    <p className="text-xs text-gray-400 mt-1">≈ ₹{plan.amountINR.toLocaleString('en-IN')} INR</p>
+                  ) : null}
                 </div>
+
+                <ul className="space-y-4 mb-8 flex-1">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      {feature.included ? (
+                        <div className={`mt-0.5 w-5 h-5 rounded-full bg-${plan.color === 'gray' ? 'green' : plan.color}-100 flex items-center justify-center flex-shrink-0`}>
+                          <Check className={`w-3 h-3 text-${plan.color === 'gray' ? 'green' : plan.color}-600`} />
+                        </div>
+                      ) : (
+                        <div className="mt-0.5 w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
+                          <X className="w-3 h-3 text-gray-300" />
+                        </div>
+                      )}
+                      <span className={`text-sm ${feature.included ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+                        {feature.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handlePlanClick(plan)}
+                  disabled={isLoading}
+                  className={`w-full py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2
+                    ${plan.popular
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25 disabled:opacity-60'
+                      : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60'}
+                  `}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Processing…
+                    </>
+                  ) : (
+                    plan.cta
+                  )}
+                </button>
               </div>
-
-              <ul className="space-y-4 mb-8 flex-1">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    {feature.included ? (
-                      <div className={`mt-0.5 w-5 h-5 rounded-full bg-${plan.color === 'gray' ? 'green' : plan.color}-100 flex items-center justify-center flex-shrink-0`}>
-                        <Check className={`w-3 h-3 text-${plan.color === 'gray' ? 'green' : plan.color}-600`} />
-                      </div>
-                    ) : (
-                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
-                        <X className="w-3 h-3 text-gray-300" />
-                      </div>
-                    )}
-                    <span className={`text-sm ${feature.included ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
-                      {feature.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button className={`w-full py-3.5 rounded-xl font-bold transition-all
-                ${plan.popular
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
-                  : 'bg-gray-900 text-white hover:bg-gray-800'}
-              `}>
-                {plan.cta}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Trust/FAQ Section Snippet */}
-        <div className="mt-20 text-center">
+        {/* Trust note */}
+        <div className="mt-20 text-center space-y-2">
+          <p className="text-gray-400 text-sm">🔒 Secure payments powered by Razorpay (Test Mode)</p>
           <p className="text-gray-500 text-sm">
-            *Unlimited plans are subject to reasonable use policy. Need a custom team plan?
-            <Link to="/contact" className="text-amber-600 font-bold ml-1 hover:underline">Contact us</Link>
+            *Unlimited plans are subject to reasonable use policy. Need a custom team plan?{' '}
+            <Link to="/contact" className="text-amber-600 font-bold hover:underline">Contact us</Link>
           </p>
         </div>
 
