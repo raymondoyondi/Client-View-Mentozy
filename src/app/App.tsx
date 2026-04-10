@@ -387,6 +387,13 @@ function App() {
           </Suspense>
         } />
 
+        {/* Payment Route */}
+        <Route path="/payment" element={
+          <Suspense fallback={<PageLoader />}>
+            <PaymentPage />
+          </Suspense>
+        } />
+
         {/* Catch-all Route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
