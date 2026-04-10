@@ -4,12 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import { Users, GraduationCap, DollarSign, UserPlus, Settings, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { getUserProfile, getOrgTeachers } from '../../lib/api';
+import { getUserProfile, getOrgTeachers, getOrgStudents } from '../../lib/api';
 
 export function OrgDashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [staff, setStaff] = useState<any[]>([]);
+    const [students, setStudents] = useState<any[]>([]);
     const [orgProfile, setOrgProfile] = useState<any>(null);
 
     // Fetch org profile details
@@ -33,6 +34,9 @@ export function OrgDashboardPage() {
 
             const teachersData = await getOrgTeachers(user.id);
             if (teachersData) setStaff(teachersData);
+
+            const studentsData = await getOrgStudents(user.id);
+            if (studentsData) setStudents(studentsData);
         };
         fetchOrgDetails();
     }, [user, navigate]);
@@ -80,7 +84,7 @@ export function OrgDashboardPage() {
                     </div>
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Students</p>
-                        <h3 className="text-2xl font-bold text-gray-900">0</h3>
+                        <h3 className="text-2xl font-bold text-gray-900">{students.length}</h3>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">

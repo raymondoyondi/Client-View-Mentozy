@@ -1156,3 +1156,84 @@ export const getOrgTeachers = async (orgId: string): Promise<any[]> => {
         return [];
     }
 }
+
+export const getOrgStudents = async (orgId: string): Promise<any[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return [];
+        
+        const { data, error } = await supabase
+            .from('org_students')
+            .select('id, status, grade, joined_at, student_id, student:profiles!student_id(full_name, avatar_url, email)')
+            .eq('org_id', orgId);
+            
+        if (error) {
+            console.error("Error fetching org students:", error);
+            return [];
+        }
+        
+        return (data || []).map((s: any) => ({
+            id: s.id,
+            student_id: s.student_id,
+            name: s.student?.full_name || 'Student',
+            email: s.student?.email || 'No email',
+            avatar: s.student?.avatar_url,
+            grade: s.grade || 'General',
+            status: s.status || 'Active',
+            joinDate: new Date(s.joined_at).toISOString().split('T')[0],
+            courses: 0,
+            performance: 'A'
+        }));
+    } catch(e) {
+        console.error("Error fetching org students:", e);
+        return [];
+    }
+}
+
+export const searchStudentsForOrg = async (query: string): Promise<Profile[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase || !query || query.length < 2) return [];
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'student')
+            .ilike('full_name', `%${query}%`)
+            .limit(10);
+            
+        if (error) throw error;
+        return data as Profile[];
+    } catch(e) {
+        console.error("Error searching students:", e);
+        return [];
+    }
+}
+
+export const sendOrgStudentInvite = async (orgId: string, studentId: string): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return false;
+        
+        // Check if already a student
+        const { count: studentCount } = await supabase.from('org_students').select('id', {count: 'exact', head: true}).eq('org_id', orgId).eq('student_id', studentId);
+        if (studentCount && studentCount > 0) return false; 
+        
+        // Remove old stranded invites
+        await supabase.from('org_student_invitations').delete().eq('org_id', orgId).eq('student_id', studentId);
+        
+        const { error } = await supabase
+            .from('org_student_invitations')
+            .insert({
+                org_id: orgId,
+                student_id: studentId,
+                status: 'pending'
+            });
+            
+        if (error) throw error;
+        return true;
+    } catch(e) {
+        console.error("Error sending org student invite:", e);
+        return false;
+    }
+}
