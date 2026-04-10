@@ -83,6 +83,7 @@ const MentorCalendarPage = lazy(() => import('./pages/MentorCalendarPage').then(
 const MentorCoursesPage = lazy(() => import('./pages/MentorCoursesPage').then(module => ({ default: module.MentorCoursesPage })));
 const CreateCoursePage = lazy(() => import('./pages/CreateCoursePage').then(module => ({ default: module.CreateCoursePage })));
 const CourseViewerPage = lazy(() => import('./pages/CourseViewerPage').then(module => ({ default: module.CourseViewerPage })));
+const PaymentPage = lazy(() => import('./pages/PaymentPage').then(module => ({ default: module.PaymentPage })));
 
 // Layout Component
 const Layout = () => {
