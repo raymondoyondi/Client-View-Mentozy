@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 declare global {
@@ -136,11 +136,10 @@ type Plan = (typeof studentPlans)[number] | (typeof teacherPlans)[number];
 
 export function PlansPage() {
   const [planType, setPlanType] = useState<'student' | 'teacher'>('student');
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   const activePlans = planType === 'student' ? studentPlans : teacherPlans;
 
-  const handlePlanClick = async (plan: Plan) => {
+  const handlePlanClick = (plan: Plan) => {
     if (plan.cta === 'Contact Sales') {
       navigate('/contact');
       return;
@@ -149,61 +148,14 @@ export function PlansPage() {
       navigate('/signup');
       return;
     }
-
-    setLoadingPlan(plan.name);
-    try {
-      const response = await fetch('http://localhost:3001/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: plan.amountINR }),
-      });
-
-      if (!response.ok) throw new Error('Failed to create order');
-
-      const order = await response.json();
-
-      const options = {
-        key: 'rzp_test_SbsDY1EgH8rPZb',
-        amount: order.amount,
-        currency: order.currency,
-        name: 'Mentozy',
-        description: `${plan.name} Plan – Monthly Subscription`,
-        order_id: order.id,
-        handler: function (response: any) {
-          alert(
-            `Payment successful! You are now on the ${plan.name} plan.\nPayment ID: ${response.razorpay_payment_id}`
-          );
-        },
-        prefill: {
-          name: '',
-          email: '',
-          contact: '',
-        },
-        notes: {
-          plan_name: plan.name,
-          plan_type: planType,
-        },
-        theme: {
-          color: '#f59e0b',
-        },
-        modal: {
-          ondismiss: function () {
-            alert('Payment cancelled. Your plan has not been changed.');
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        alert(`Payment failed: ${response.error.description}`);
-      });
-      rzp.open();
-    } catch (err) {
-      alert('Could not initiate payment. Please try again shortly.');
-      console.error(err);
-    } finally {
-      setLoadingPlan(null);
-    }
+    navigate('/payment', {
+      state: {
+        planName: plan.name,
+        planType,
+        amountINR: plan.amountINR,
+        priceLabel: plan.price,
+      },
+    });
   };
 
   return (
@@ -247,7 +199,6 @@ export function PlansPage() {
         {/* Plans Grid */}
         <div className={`grid md:grid-cols-2 ${activePlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl' : 'lg:grid-cols-4 max-w-7xl'} gap-8 mx-auto`}>
           {activePlans.map((plan) => {
-            const isLoading = loadingPlan === plan.name;
             return (
               <div
                 key={plan.name}
@@ -296,21 +247,13 @@ export function PlansPage() {
 
                 <button
                   onClick={() => handlePlanClick(plan)}
-                  disabled={isLoading}
-                  className={`w-full py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2
+                  className={`w-full py-3.5 rounded-xl font-bold transition-all
                     ${plan.popular
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25 disabled:opacity-60'
-                      : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60'}
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'}
                   `}
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Processing…
-                    </>
-                  ) : (
-                    plan.cta
-                  )}
+                  {plan.cta}
                 </button>
               </div>
             );
