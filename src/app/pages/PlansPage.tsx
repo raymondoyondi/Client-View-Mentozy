@@ -10,10 +10,12 @@ declare global {
 
 function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const injected = useRef(false);
 
   useEffect(() => {
     const form = formRef.current;
-    if (!form) return;
+    if (!form || injected.current) return;
+    injected.current = true;
 
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
@@ -22,6 +24,7 @@ function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
     form.appendChild(script);
 
     return () => {
+      injected.current = false;
       if (form.contains(script)) form.removeChild(script);
     };
   }, [buttonId]);
