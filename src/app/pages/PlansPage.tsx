@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, CreditCard, Sparkles, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 declare global {
@@ -8,9 +8,11 @@ declare global {
   }
 }
 
-function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
+function RazorpayPaymentButton({ buttonId, planName, isPopular, color }: { buttonId: string; planName: string; isPopular?: boolean; color: string }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const injected = useRef(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const form = formRef.current;
@@ -21,6 +23,11 @@ function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
     script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
     script.setAttribute('data-payment_button_id', buttonId);
     script.async = true;
+    
+    script.onload = () => {
+      setTimeout(() => setIsLoading(false), 500);
+    };
+    
     form.appendChild(script);
 
     return () => {
@@ -29,7 +36,48 @@ function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
     };
   }, [buttonId]);
 
-  return <form ref={formRef} className="w-full" />;
+  // Determine button colors based on plan
+  const getButtonStyles = () => {
+    if (isPopular) {
+      return 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-amber-500/25';
+    }
+    if (color === 'indigo') {
+      return 'from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 shadow-indigo-500/25';
+    }
+    return 'from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black shadow-gray-500/15';
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      {/* Custom styled overlay button */}
+      <div className={`relative w-full py-4 px-6 rounded-2xl font-bold text-white bg-gradient-to-r ${getButtonStyles()} 
+        shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer
+        flex items-center justify-center gap-3 group overflow-hidden`}
+      >
+        {/* Shimmer effect */}
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        
+        {isLoading ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <>
+            {isPopular ? (
+              <Sparkles className="w-5 h-5" />
+            ) : (
+              <CreditCard className="w-5 h-5" />
+            )}
+            <span className="relative">Subscribe to {planName}</span>
+          </>
+        )}
+      </div>
+      
+      {/* Hidden Razorpay form - positioned to capture clicks */}
+      <form 
+        ref={formRef} 
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [&_.razorpay-payment-button]:!w-full [&_.razorpay-payment-button]:!h-full [&_.razorpay-payment-button]:!opacity-0"
+      />
+    </div>
+  );
 }
 
 const studentPlans = [
@@ -220,48 +268,80 @@ export function PlansPage() {
         </div>
 
         {/* Plans Grid */}
-        <div className={`grid md:grid-cols-2 ${activePlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl' : 'lg:grid-cols-4 max-w-7xl'} gap-8 mx-auto`}>
+        <div className={`grid md:grid-cols-2 ${activePlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl' : 'lg:grid-cols-4 max-w-7xl'} gap-6 mx-auto`}>
           {activePlans.map((plan) => {
+            // Get color classes based on plan
+            const getColorClasses = () => {
+              if (plan.color === 'amber') return { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', check: 'bg-amber-100 text-amber-600' };
+              if (plan.color === 'indigo') return { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200', check: 'bg-indigo-100 text-indigo-600' };
+              if (plan.color === 'rose') return { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', check: 'bg-rose-100 text-rose-600' };
+              return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', check: 'bg-emerald-100 text-emerald-600' };
+            };
+            const colors = getColorClasses();
+
             return (
               <div
                 key={plan.name}
-                className={`relative bg-white rounded-3xl p-8 border hover:shadow-xl transition-all duration-300 flex flex-col
-                  ${plan.popular ? 'border-amber-500 shadow-lg scale-105 z-10' : 'border-gray-200 shadow-sm'}
+                className={`group relative bg-white rounded-3xl p-8 border-2 hover:shadow-2xl transition-all duration-500 flex flex-col
+                  ${plan.popular 
+                    ? 'border-amber-400 shadow-xl shadow-amber-500/10 scale-[1.02] z-10 ring-1 ring-amber-400/50' 
+                    : 'border-gray-100 shadow-lg hover:border-gray-200 hover:-translate-y-1'}
                 `}
               >
+                {/* Background gradient for popular */}
                 {plan.popular && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-transparent to-orange-50/30 rounded-3xl pointer-events-none" />
+                )}
+
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-5 py-2 rounded-full uppercase tracking-wider shadow-lg shadow-amber-500/30 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
                     Most Popular
                   </div>
                 )}
 
-                <div className="mb-8">
-                  <h3 className={`text-xl font-bold mb-2 text-${plan.color === 'gray' ? 'gray-900' : plan.color + '-600'}`}>
+                <div className="relative mb-8">
+                  {/* Plan icon */}
+                  <div className={`w-12 h-12 ${colors.bg} ${colors.text} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    {plan.color === 'gray' && <span className="text-xl font-bold">S</span>}
+                    {plan.color === 'amber' && <Sparkles className="w-6 h-6" />}
+                    {plan.color === 'indigo' && <CreditCard className="w-6 h-6" />}
+                    {plan.color === 'rose' && <span className="text-xl font-bold">E</span>}
+                  </div>
+
+                  <h3 className={`text-2xl font-bold mb-2 ${colors.text}`}>
                     {plan.name}
                   </h3>
-                  <p className="text-gray-500 text-sm mb-6">{plan.description}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    <span className="text-gray-500">{plan.period}</span>
+                  <p className="text-gray-500 text-sm leading-relaxed">{plan.description}</p>
+                  
+                  <div className="mt-6 pb-6 border-b border-gray-100">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-black text-gray-900 tracking-tight">{plan.price}</span>
+                      <span className="text-gray-400 font-medium">{plan.period}</span>
+                    </div>
+                    {plan.amountINR ? (
+                      <p className="text-sm text-gray-400 mt-2 font-medium">
+                        <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md">
+                          ₹{plan.amountINR.toLocaleString('en-IN')} INR
+                        </span>
+                      </p>
+                    ) : null}
                   </div>
-                  {plan.amountINR ? (
-                    <p className="text-xs text-gray-400 mt-1">≈ ₹{plan.amountINR.toLocaleString('en-IN')} INR</p>
-                  ) : null}
                 </div>
 
                 <ul className="space-y-4 mb-8 flex-1">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
+                    <li key={i} className="flex items-start gap-3 group/item">
                       {feature.included ? (
-                        <div className={`mt-0.5 w-5 h-5 rounded-full bg-${plan.color === 'gray' ? 'green' : plan.color}-100 flex items-center justify-center flex-shrink-0`}>
-                          <Check className={`w-3 h-3 text-${plan.color === 'gray' ? 'green' : plan.color}-600`} />
+                        <div className={`mt-0.5 w-6 h-6 rounded-full ${colors.check} flex items-center justify-center flex-shrink-0 group-hover/item:scale-110 transition-transform`}>
+                          <Check className="w-3.5 h-3.5" />
                         </div>
                       ) : (
-                        <div className="mt-0.5 w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
-                          <X className="w-3 h-3 text-gray-300" />
+                        <div className="mt-0.5 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <X className="w-3.5 h-3.5 text-gray-300" />
                         </div>
                       )}
-                      <span className={`text-sm ${feature.included ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+                      <span className={`text-sm leading-relaxed ${feature.included ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
                         {feature.name}
                       </span>
                     </li>
@@ -269,19 +349,25 @@ export function PlansPage() {
                 </ul>
 
                 {plan.razorpayButtonId ? (
-                  <RazorpayPaymentButton buttonId={plan.razorpayButtonId} />
+                  <RazorpayPaymentButton 
+                    buttonId={plan.razorpayButtonId} 
+                    planName={plan.name}
+                    isPopular={plan.popular}
+                    color={plan.color}
+                  />
                 ) : (
                   <button
                     onClick={() => handlePlanClick(plan)}
-                    className={`w-full py-3.5 rounded-xl font-bold transition-all
+                    className={`relative w-full py-4 px-6 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden
                       ${plan.popular
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-xl hover:shadow-amber-500/25 hover:-translate-y-0.5'
                         : plan.color === 'rose'
-                        ? 'bg-rose-600 text-white hover:bg-rose-700'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'}
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white hover:shadow-xl hover:shadow-rose-500/25 hover:-translate-y-0.5'
+                        : 'bg-gradient-to-r from-gray-800 to-gray-900 text-white hover:shadow-xl hover:shadow-gray-500/15 hover:-translate-y-0.5'}
                     `}
                   >
-                    {plan.cta}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                    <span className="relative">{plan.cta}</span>
                   </button>
                 )}
               </div>
