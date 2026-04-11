@@ -47,6 +47,7 @@ const studentPlans = [
       { name: 'General Hackathon Updates', included: true },
     ],
     cta: 'Get Started',
+    razorpayButtonId: null,
     popular: false,
     color: 'gray'
   },
@@ -63,6 +64,7 @@ const studentPlans = [
       { name: 'Access to 1 Live Group Masterclass per Month', included: true },
     ],
     cta: 'Subscribe Now',
+    razorpayButtonId: 'pl_Sc2vq7uLAFgdgR',
     popular: true,
     color: 'amber'
   },
@@ -80,6 +82,7 @@ const studentPlans = [
       { name: 'Fast-Track Priority for Mentozy Hackathons', included: true },
     ],
     cta: 'Go Ultra',
+    razorpayButtonId: 'pl_Sc31AvlmcIzvnD',
     popular: false,
     color: 'indigo'
   }
@@ -100,6 +103,7 @@ const teacherPlans = [
       { name: 'Standard Search Visibility', included: true },
     ],
     cta: 'Get Started',
+    razorpayButtonId: null,
     popular: false,
     color: 'gray'
   },
@@ -117,6 +121,7 @@ const teacherPlans = [
       { name: 'Basic Revenue Analytics', included: true },
     ],
     cta: 'Subscribe Now',
+    razorpayButtonId: 'pl_Sc337IXZpGrRXs',
     popular: true,
     color: 'amber'
   },
@@ -134,6 +139,7 @@ const teacherPlans = [
       { name: 'Everything in Premium Squad', included: true },
     ],
     cta: 'Go Ultra',
+    razorpayButtonId: 'pl_Sc34BV76MHTPsg',
     popular: false,
     color: 'indigo'
   },
@@ -151,6 +157,7 @@ const teacherPlans = [
       { name: 'Everything in Ultra Agency', included: true },
     ],
     cta: 'Contact Sales',
+    razorpayButtonId: null,
     popular: false,
     color: 'rose'
   }
@@ -172,14 +179,6 @@ export function PlansPage() {
       navigate('/signup');
       return;
     }
-    navigate('/payment', {
-      state: {
-        planName: plan.name,
-        planType,
-        amountINR: plan.amountINR,
-        priceLabel: plan.price,
-      },
-    });
   };
 
   return (
@@ -269,59 +268,21 @@ export function PlansPage() {
                   ))}
                 </ul>
 
-                <button
-                  onClick={() => handlePlanClick(plan)}
-                  className={`w-full py-3.5 rounded-xl font-bold transition-all
-                    ${plan.popular
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'}
-                  `}
-                >
-                  {plan.cta}
-                </button>
-
-                {plan.name === 'Premium' && planType === 'student' && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
-                      <div className="flex-1 h-px bg-gray-100" />
-                    </div>
-                    <RazorpayPaymentButton buttonId="pl_Sc2vq7uLAFgdgR" />
-                  </div>
-                )}
-
-                {plan.name === 'Ultra' && planType === 'student' && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
-                      <div className="flex-1 h-px bg-gray-100" />
-                    </div>
-                    <RazorpayPaymentButton buttonId="pl_Sc31AvlmcIzvnD" />
-                  </div>
-                )}
-
-                {plan.name === 'Premium Squad' && planType === 'teacher' && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
-                      <div className="flex-1 h-px bg-gray-100" />
-                    </div>
-                    <RazorpayPaymentButton buttonId="pl_Sc337IXZpGrRXs" />
-                  </div>
-                )}
-
-                {plan.name === 'Ultra Agency' && planType === 'teacher' && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
-                      <div className="flex-1 h-px bg-gray-100" />
-                    </div>
-                    <RazorpayPaymentButton buttonId="pl_Sc34BV76MHTPsg" />
-                  </div>
+                {plan.razorpayButtonId ? (
+                  <RazorpayPaymentButton buttonId={plan.razorpayButtonId} />
+                ) : (
+                  <button
+                    onClick={() => handlePlanClick(plan)}
+                    className={`w-full py-3.5 rounded-xl font-bold transition-all
+                      ${plan.popular
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/25'
+                        : plan.color === 'rose'
+                        ? 'bg-rose-600 text-white hover:bg-rose-700'
+                        : 'bg-gray-900 text-white hover:bg-gray-800'}
+                    `}
+                  >
+                    {plan.cta}
+                  </button>
                 )}
               </div>
             );
@@ -330,7 +291,7 @@ export function PlansPage() {
 
         {/* Trust note */}
         <div className="mt-20 text-center space-y-2">
-          <p className="text-gray-400 text-sm">🔒 Secure payments powered by Razorpay (Test Mode)</p>
+          <p className="text-gray-400 text-sm">🔒 Secure payments powered by Razorpay</p>
           <p className="text-gray-500 text-sm">
             *Unlimited plans are subject to reasonable use policy. Need a custom team plan?{' '}
             <Link to="/contact" className="text-amber-600 font-bold hover:underline">Contact us</Link>
