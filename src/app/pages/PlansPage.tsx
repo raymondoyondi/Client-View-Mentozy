@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,27 @@ declare global {
   interface Window {
     Razorpay: any;
   }
+}
+
+function RazorpayPaymentButton({ buttonId }: { buttonId: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/payment-button.js';
+    script.setAttribute('data-payment_button_id', buttonId);
+    script.async = true;
+    form.appendChild(script);
+
+    return () => {
+      if (form.contains(script)) form.removeChild(script);
+    };
+  }, [buttonId]);
+
+  return <form ref={formRef} className="w-full" />;
 }
 
 const studentPlans = [
@@ -255,6 +276,17 @@ export function PlansPage() {
                 >
                   {plan.cta}
                 </button>
+
+                {plan.name === 'Premium' && planType === 'student' && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 h-px bg-gray-100" />
+                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                    <RazorpayPaymentButton buttonId="pl_Sc2vq7uLAFgdgR" />
+                  </div>
+                )}
               </div>
             );
           })}
