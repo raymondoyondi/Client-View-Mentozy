@@ -301,6 +301,17 @@ export function PlansPage() {
                     <RazorpayPaymentButton buttonId="pl_Sc31AvlmcIzvnD" />
                   </div>
                 )}
+
+                {plan.name === 'Premium Squad' && planType === 'teacher' && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 h-px bg-gray-100" />
+                      <span className="text-xs text-gray-400 whitespace-nowrap">or pay instantly</span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                    <RazorpayPaymentButton buttonId="pl_Sc337IXZpGrRXs" />
+                  </div>
+                )}
               </div>
             );
           })}
