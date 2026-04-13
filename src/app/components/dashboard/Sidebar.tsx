@@ -62,6 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { icon: Calendar, label: 'Calendar', path: '/org-calendar' },
         { icon: Users, label: 'Teachers', path: '/org-teachers' },
         { icon: CalendarDays, label: 'Events', path: '/org-events' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
         { icon: BookOpen, label: 'Courses', path: '/org-courses' },
         { icon: BookMarked, label: 'Study Materials', path: '/org-materials' },
         { icon: Settings, label: 'Settings', path: '/org-settings' },

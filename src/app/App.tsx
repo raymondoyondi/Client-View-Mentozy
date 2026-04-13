@@ -52,6 +52,7 @@ const OrgEventsPage = lazy(() => import('./pages/OrgEventsPage').then(module => 
 const OrgCoursesPage = lazy(() => import('./pages/OrgCoursesPage').then(module => ({ default: module.OrgCoursesPage })));
 const OrgMaterialsPage = lazy(() => import('./pages/OrgMaterialsPage').then(module => ({ default: module.OrgMaterialsPage })));
 const OrgSettingsPage = lazy(() => import('./pages/OrgSettingsPage').then(module => ({ default: module.OrgSettingsPage })));
+const OrgAnnouncementsPage = lazy(() => import('./pages/OrgAnnouncementsPage').then(module => ({ default: module.OrgAnnouncementsPage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then(module => ({ default: module.AdminDashboardPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const PlansPage = lazy(() => import('./pages/PlansPage').then(module => ({ default: module.PlansPage })));
@@ -264,6 +265,11 @@ function App() {
         <Route path="/org-materials" element={
           <Suspense fallback={<PageLoader />}>
             <OrgMaterialsPage />
+          </Suspense>
+        } />
+        <Route path="/org-announcements" element={
+          <Suspense fallback={<PageLoader />}>
+            <OrgAnnouncementsPage />
           </Suspense>
         } />
         <Route path="/org-settings" element={
