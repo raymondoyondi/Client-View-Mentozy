@@ -142,8 +142,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </button>
                     </div>
 
+                    {/* Organization Mode Badge */}
+                    {mode === 'organization' && activeOrganization && (
+                        <div className="mx-4 my-3 p-3 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Building2 className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-indigo-700 truncate">{activeOrganization.name}</span>
+                            </div>
+                            <span className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider bg-indigo-100 px-2 py-0.5 rounded-full">
+                                {activeOrganization.role === 'teacher' ? 'Teacher View' : 'Student View'}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Nav Items */}
-                    <nav className="flex-1 px-4 py-6 space-y-1">
+                    <nav className="flex-1 px-4 py-2 space-y-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
@@ -152,11 +165,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 className={`
                                     flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all
                                     ${isActive(item.path)
-                                        ? 'bg-amber-50 text-amber-900'
+                                        ? mode === 'organization'
+                                            ? 'bg-indigo-50 text-indigo-900'
+                                            : 'bg-amber-50 text-amber-900'
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                                 `}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive(item.path) ? 'text-amber-500' : 'text-gray-400'}`} />
+                                <item.icon className={`w-5 h-5 ${isActive(item.path) ? (mode === 'organization' ? 'text-indigo-500' : 'text-amber-500') : 'text-gray-400'}`} />
                                 {item.label}
                             </Link>
                         ))}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { ModeToggle } from './ModeToggle';
-import { Menu } from 'lucide-react';
+import { Menu, Building2, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useOrganizationMode } from '../../../context/OrganizationModeContext';
 import { Navigate } from 'react-router-dom';
@@ -20,14 +20,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     useEffect(() => {
         if (!user) return;
-        
-        // If in organization mode, use the active organization's name
+
         if (mode === 'organization' && activeOrganization) {
             setOrgName(activeOrganization.name);
             return;
         }
-        
-        // Otherwise, fetch the company name from mentors table
+
         const fetchCompanyName = async () => {
             const supabase = getSupabase();
             if (!supabase) return;
@@ -41,8 +39,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         fetchCompanyName();
     }, [user, mode, activeOrganization]);
 
-    if (loading) return null; // Or a loading spinner
+    if (loading) return null;
     if (!user) return <Navigate to="/login" replace />;
+
+    const isOrgMode = mode === 'organization' && activeOrganization;
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
@@ -50,15 +50,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Main Content */}
             <div className="md:ml-64 min-h-screen flex flex-col">
+
+                {/* Organization Mode Banner — always visible when in org mode */}
+                {isOrgMode && (
+                    <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 md:px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 bg-white/20 rounded-md flex items-center justify-center flex-shrink-0">
+                                <Building2 className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <span className="text-white text-sm font-semibold truncate">
+                                {activeOrganization.name}
+                            </span>
+                            <span className="hidden sm:inline text-xs text-indigo-200 bg-white/10 px-2 py-0.5 rounded-full capitalize">
+                                {activeOrganization.role === 'teacher' ? 'Teacher' : 'Student'} · Organization Mode
+                            </span>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <ModeToggle compact />
+                        </div>
+                    </div>
+                )}
+
                 {/* Mobile Header */}
                 <header className="md:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-bold text-lg text-gray-900 truncate">
-                            {orgName}
+                            {isOrgMode ? activeOrganization.name : orgName}
                             <div className="w-1.5 h-1.5 bg-amber-500 rounded-sm flex-shrink-0"></div>
                         </div>
                         <div className="flex items-center gap-2">
-                            {hasOrganizations && <ModeToggle />}
+                            {hasOrganizations && !isOrgMode && <ModeToggle />}
                             <button
                                 onClick={() => setIsSidebarOpen(true)}
                                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -69,20 +90,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                 </header>
 
-                {/* Desktop Header with Mode Toggle */}
-                {hasOrganizations && (
+                {/* Desktop Header — only show in personal mode (org mode has the banner) */}
+                {!isOrgMode && hasOrganizations && (
                     <header className="hidden md:flex bg-white border-b border-gray-200 px-6 py-3 items-center justify-between sticky top-0 z-30">
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-500">
-                                {mode === 'organization' ? 'Organization Mode' : 'Personal Mode'}
-                            </span>
-                            {mode === 'organization' && activeOrganization && (
-                                <span className="text-sm font-medium text-amber-600">
-                                    {activeOrganization.name}
-                                </span>
-                            )}
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <User className="w-4 h-4" />
+                            <span>Personal Mode</span>
                         </div>
                         <ModeToggle />
+                    </header>
+                )}
+
+                {/* Desktop Spacer header when in org mode (banner takes the place) */}
+                {isOrgMode && (
+                    <header className="hidden md:flex bg-white border-b border-gray-200 px-6 py-3 items-center justify-end sticky top-0 z-30">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span className="text-xs font-medium text-gray-400">Switch mode:</span>
+                            <ModeToggle />
+                        </div>
                     </header>
                 )}
 

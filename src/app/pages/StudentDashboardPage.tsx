@@ -6,7 +6,9 @@ import {
     Flame, Trophy, GraduationCap, Target, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganizationMode } from '../../context/OrganizationModeContext';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
+import { OrgStudentDashboard } from '../components/dashboard/OrgStudentDashboard';
 import { Enrollment, Profile, Booking, getStudentEnrollments, getUserProfile, getStudentBookings, getPendingOrgInvitesForStudent, respondToOrgStudentInvite } from '../../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from '../../components/ui/calendar';
@@ -15,6 +17,7 @@ import { toast } from 'sonner';
 
 export function StudentDashboardPage() {
     const { user } = useAuth();
+    const { mode, activeOrganization } = useOrganizationMode();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -120,6 +123,15 @@ export function StudentDashboardPage() {
         setSelectedBooking(booking);
         setDetailsModalOpen(true);
     };
+
+    // Organization mode: show isolated org dashboard
+    if (mode === 'organization' && activeOrganization) {
+        return (
+            <DashboardLayout>
+                <OrgStudentDashboard />
+            </DashboardLayout>
+        );
+    }
 
     return (
         <DashboardLayout>

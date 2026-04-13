@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganizationMode } from '../../context/OrganizationModeContext';
+import { OrgMentorDashboard } from '../components/dashboard/OrgMentorDashboard';
 import { getUserProfile, getMentorBookings, updateBookingStatus, acceptBooking, updateMentorStatus, Profile, Booking, getPendingOrgInvitesForMentor, respondToOrgInvite } from '../../lib/api';
 import { getSupabase } from '../../lib/supabase';
 import {
@@ -16,6 +18,7 @@ import { StudentProfileModal } from '../components/mentor/StudentProfileModal';
 
 export function MentorDashboardPage() {
     const { user } = useAuth();
+    const { mode, activeOrganization } = useOrganizationMode();
     const navigate = useNavigate();
 
     // State
@@ -160,6 +163,15 @@ export function MentorDashboardPage() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
             </div>
+        );
+    }
+
+    // Organization mode: show isolated org mentor dashboard
+    if (mode === 'organization' && activeOrganization) {
+        return (
+            <DashboardLayout>
+                <OrgMentorDashboard />
+            </DashboardLayout>
         );
     }
 
