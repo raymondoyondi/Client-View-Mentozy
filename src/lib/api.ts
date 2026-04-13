@@ -1290,4 +1290,477 @@ export const respondToOrgStudentInvite = async (inviteId: string, orgId: string,
         return false;
     }
 }
-
+
+// ==============================
+// ORGANIZATION MODE API FUNCTIONS
+// ==============================
+
+export interface OrgMembership {
+    id: string;
+    org_id: string;
+    role: 'student' | 'teacher';
+    status: string;
+    joined_at: string;
+    organization: {
+        id: string;
+        name: string;
+        avatar_url?: string;
+    };
+}
+
+// Get all organizations the user belongs to (as student or teacher)
+export const getUserOrganizations = async (userId: string): Promise<OrgMembership[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const memberships: OrgMembership[] = [];
+
+        // Fetch organizations where user is a student
+        const { data: studentOrgs, error: studentError } = await supabase
+            .from('org_students')
+            .select(`
+                id,
+                org_id,
+                status,
+                joined_at,
+                profiles!org_students_org_id_fkey (
+                    id,
+                    full_name,
+                    avatar_url
+                )
+            `)
+            .eq('student_id', userId)
+            .eq('status', 'Active');
+
+        if (!studentError && studentOrgs) {
+            studentOrgs.forEach((item: any) => {
+                if (item.profiles) {
+                    memberships.push({
+                        id: item.id,
+                        org_id: item.org_id,
+                        role: 'student',
+                        status: item.status,
+                        joined_at: item.joined_at,
+                        organization: {
+                            id: item.profiles.id,
+                            name: item.profiles.full_name || 'Unknown Organization',
+                            avatar_url: item.profiles.avatar_url,
+                        },
+                    });
+                }
+            });
+        }
+
+        // Fetch organizations where user is a teacher
+        const { data: teacherOrgs, error: teacherError } = await supabase
+            .from('org_teachers')
+            .select(`
+                id,
+                org_id,
+                status,
+                joined_at,
+                profiles!org_teachers_org_id_fkey (
+                    id,
+                    full_name,
+                    avatar_url
+                )
+            `)
+            .eq('teacher_id', userId)
+            .eq('status', 'Active');
+
+        if (!teacherError && teacherOrgs) {
+            teacherOrgs.forEach((item: any) => {
+                if (item.profiles) {
+                    // Check if already added as student (user can be both)
+                    const existingIndex = memberships.findIndex(m => m.org_id === item.org_id);
+                    if (existingIndex === -1) {
+                        memberships.push({
+                            id: item.id,
+                            org_id: item.org_id,
+                            role: 'teacher',
+                            status: item.status,
+                            joined_at: item.joined_at,
+                            organization: {
+                                id: item.profiles.id,
+                                name: item.profiles.full_name || 'Unknown Organization',
+                                avatar_url: item.profiles.avatar_url,
+                            },
+                        });
+                    }
+                }
+            });
+        }
+
+        return memberships;
+    } catch (e) {
+        console.error("Error fetching user organizations:", e);
+        return [];
+    }
+};
+
+// Get enrollments for a student within a specific organization
+export const getOrgStudentEnrollments = async (studentId: string, orgId: string): Promise<Enrollment[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const { data, error } = await supabase
+            .from('enrollments')
+            .select('*, tracks(*, track_modules(title))')
+            .eq('user_id', studentId)
+            .eq('org_id', orgId);
+
+        if (error) {
+            console.error("Error fetching org enrollments:", error);
+            return [];
+        }
+
+        return data.map((e: any) => {
+            let mappedTrack: Track | undefined = undefined;
+            if (e.tracks) {
+                const t = e.tracks;
+                mappedTrack = {
+                    id: t.id,
+                    title: t.title,
+                    level: t.level || 'All Levels',
+                    duration: t.duration_weeks ? `${t.duration_weeks} Weeks` : 'Self-paced',
+                    projects: 0,
+                    description: t.description || '',
+                    modules: t.track_modules?.map((m: any) => m.title) || [],
+                    image_url: t.image_url
+                };
+            }
+            return { ...e, tracks: mappedTrack } as Enrollment;
+        });
+    } catch (e) {
+        console.error("Error in getOrgStudentEnrollments:", e);
+        return [];
+    }
+};
+
+// Get bookings/sessions for a student within a specific organization
+export const getOrgStudentBookings = async (studentId: string, orgId: string): Promise<Booking[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                *,
+                mentors(
+                    *,
+                    profiles(full_name, avatar_url),
+                    mentor_expertise(skill)
+                ),
+                mentor_availability(start_time)
+            `)
+            .eq('student_id', studentId)
+            .eq('org_id', orgId);
+
+        if (error) {
+            console.error("Error fetching org bookings:", error);
+            return [];
+        }
+
+        return data.map((b: any) => {
+            let mappedMentor: Mentor | undefined = undefined;
+            if (b.mentors) {
+                const m = b.mentors;
+                mappedMentor = {
+                    id: m.id,
+                    user_id: m.user_id,
+                    name: m.profiles?.full_name || 'Unknown Mentor',
+                    role: m.bio ? m.bio.split('.')[0] : 'Expert',
+                    company: m.company || 'Independent',
+                    expertise: m.mentor_expertise?.map((e: any) => e.skill) || [],
+                    image: m.profiles?.avatar_url || '',
+                    initials: '??'
+                };
+            }
+
+            return {
+                id: b.id,
+                user_id: b.student_id,
+                mentor_id: b.mentor_id,
+                status: b.status,
+                scheduled_at: b.mentor_availability?.start_time || new Date().toISOString(),
+                meeting_link: b.meeting_link,
+                mentor_note: b.mentor_note,
+                payment_link: b.payment_link,
+                mentors: mappedMentor
+            } as Booking;
+        });
+    } catch (e) {
+        console.error("Error in getOrgStudentBookings:", e);
+        return [];
+    }
+};
+
+// Get students assigned to a teacher within an organization
+export const getOrgTeacherStudents = async (teacherId: string, orgId: string): Promise<Profile[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        // Get all students in the organization
+        const { data, error } = await supabase
+            .from('org_students')
+            .select(`
+                student_id,
+                status,
+                grade,
+                profiles!org_students_student_id_fkey (
+                    id,
+                    full_name,
+                    avatar_url,
+                    role,
+                    grade,
+                    school,
+                    interests
+                )
+            `)
+            .eq('org_id', orgId)
+            .eq('status', 'Active');
+
+        if (error) {
+            console.error("Error fetching org teacher students:", error);
+            return [];
+        }
+
+        return data
+            .filter((item: any) => item.profiles)
+            .map((item: any) => ({
+                id: item.profiles.id,
+                full_name: item.profiles.full_name || 'Unknown Student',
+                avatar_url: item.profiles.avatar_url,
+                role: item.profiles.role,
+                grade: item.grade || item.profiles.grade,
+                school: item.profiles.school,
+                interests: item.profiles.interests,
+            } as Profile));
+    } catch (e) {
+        console.error("Error in getOrgTeacherStudents:", e);
+        return [];
+    }
+};
+
+// Get sessions for a teacher within an organization
+export const getOrgTeacherSessions = async (teacherId: string, orgId: string): Promise<Booking[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        // First get the mentor id for this teacher
+        const { data: mentorData, error: mentorError } = await supabase
+            .from('mentors')
+            .select('id')
+            .eq('user_id', teacherId)
+            .single();
+
+        if (mentorError || !mentorData) {
+            console.error("Error fetching mentor id:", mentorError);
+            return [];
+        }
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                *,
+                profiles!bookings_student_id_fkey (
+                    id,
+                    full_name,
+                    avatar_url
+                ),
+                mentor_availability(start_time)
+            `)
+            .eq('mentor_id', mentorData.id)
+            .eq('org_id', orgId);
+
+        if (error) {
+            console.error("Error fetching org teacher sessions:", error);
+            return [];
+        }
+
+        return data.map((b: any) => ({
+            id: b.id,
+            user_id: b.student_id,
+            mentor_id: b.mentor_id,
+            status: b.status,
+            scheduled_at: b.mentor_availability?.start_time || new Date().toISOString(),
+            meeting_link: b.meeting_link,
+            mentor_note: b.mentor_note,
+            payment_link: b.payment_link,
+            profiles: b.profiles ? {
+                id: b.profiles.id,
+                full_name: b.profiles.full_name || 'Unknown Student',
+                avatar_url: b.profiles.avatar_url,
+                role: 'student' as const,
+            } : undefined
+        } as Booking));
+    } catch (e) {
+        console.error("Error in getOrgTeacherSessions:", e);
+        return [];
+    }
+};
+
+// Get courses managed by teacher in organization
+export const getOrgTeacherCourses = async (teacherId: string, orgId: string): Promise<Track[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const { data, error } = await supabase
+            .from('tracks')
+            .select('*, track_modules(title, module_order)')
+            .eq('creator_id', teacherId)
+            .eq('org_id', orgId);
+
+        if (error) {
+            console.error("Error fetching org teacher courses:", error);
+            return [];
+        }
+
+        return data.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            level: t.level || 'All Levels',
+            duration: t.duration_weeks ? `${t.duration_weeks} Weeks` : 'Self-paced',
+            projects: 0,
+            description: t.description || '',
+            modules: t.track_modules?.sort((a: any, b: any) => a.module_order - b.module_order).map((m: any) => m.title) || [],
+            image_url: t.image_url,
+            status: t.status,
+            creator_id: t.creator_id,
+            price: t.price
+        } as Track));
+    } catch (e) {
+        console.error("Error in getOrgTeacherCourses:", e);
+        return [];
+    }
+};
+
+// Get personal enrollments (excluding organization enrollments)
+export const getPersonalEnrollments = async (userId: string): Promise<Enrollment[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const { data, error } = await supabase
+            .from('enrollments')
+            .select('*, tracks(*, track_modules(title))')
+            .eq('user_id', userId)
+            .is('org_id', null);
+
+        if (error) {
+            console.error("Error fetching personal enrollments:", error);
+            return [];
+        }
+
+        return data.map((e: any) => {
+            let mappedTrack: Track | undefined = undefined;
+            if (e.tracks) {
+                const t = e.tracks;
+                mappedTrack = {
+                    id: t.id,
+                    title: t.title,
+                    level: t.level || 'All Levels',
+                    duration: t.duration_weeks ? `${t.duration_weeks} Weeks` : 'Self-paced',
+                    projects: 0,
+                    description: t.description || '',
+                    modules: t.track_modules?.map((m: any) => m.title) || [],
+                    image_url: t.image_url
+                };
+            }
+            return { ...e, tracks: mappedTrack } as Enrollment;
+        });
+    } catch (e) {
+        console.error("Error in getPersonalEnrollments:", e);
+        return [];
+    }
+};
+
+// Get personal bookings (excluding organization bookings)
+export const getPersonalBookings = async (userId: string): Promise<Booking[]> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return [];
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                *,
+                mentors(
+                    *,
+                    profiles(full_name, avatar_url),
+                    mentor_expertise(skill)
+                ),
+                mentor_availability(start_time)
+            `)
+            .eq('student_id', userId)
+            .is('org_id', null);
+
+        if (error) {
+            console.error("Error fetching personal bookings:", error);
+            return [];
+        }
+
+        return data.map((b: any) => {
+            let mappedMentor: Mentor | undefined = undefined;
+            if (b.mentors) {
+                const m = b.mentors;
+                mappedMentor = {
+                    id: m.id,
+                    user_id: m.user_id,
+                    name: m.profiles?.full_name || 'Unknown Mentor',
+                    role: m.bio ? m.bio.split('.')[0] : 'Expert',
+                    company: m.company || 'Independent',
+                    expertise: m.mentor_expertise?.map((e: any) => e.skill) || [],
+                    image: m.profiles?.avatar_url || '',
+                    initials: '??'
+                };
+            }
+
+            return {
+                id: b.id,
+                user_id: b.student_id,
+                mentor_id: b.mentor_id,
+                status: b.status,
+                scheduled_at: b.mentor_availability?.start_time || new Date().toISOString(),
+                meeting_link: b.meeting_link,
+                mentor_note: b.mentor_note,
+                payment_link: b.payment_link,
+                mentors: mappedMentor
+            } as Booking;
+        });
+    } catch (e) {
+        console.error("Error in getPersonalBookings:", e);
+        return [];
+    }
+};
+
+// Get organization details
+export const getOrganizationDetails = async (orgId: string): Promise<Profile | null> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return null;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', orgId)
+            .single();
+
+        if (error) {
+            console.error("Error fetching organization details:", error);
+            return null;
+        }
+
+        return data as Profile;
+    } catch (e) {
+        console.error("Error in getOrganizationDetails:", e);
+        return null;
+    }
+};
+

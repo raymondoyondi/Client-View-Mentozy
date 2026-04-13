@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { StudentTools } from './components/StudentTools';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider } from '../context/AuthContext';
+import { OrganizationModeProvider } from '../context/OrganizationModeContext';
 
 import { HomePage } from './pages/HomePage';
 import { Toaster } from 'sonner';
@@ -117,9 +118,10 @@ function App() {
 
   return (
     <AuthProvider>
-      <Toaster position="top-center" richColors /> {/* Added Toaster component */}
+      <OrganizationModeProvider>
+        <Toaster position="top-center" richColors /> {/* Added Toaster component */}
 
-      <Routes>
+        <Routes>
         {/* Public Pages with Layout */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
@@ -394,10 +396,11 @@ function App() {
           </Suspense>
         } />
 
-        {/* Catch-all Route */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      <StudentTools />
+          {/* Catch-all Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <StudentTools />
+      </OrganizationModeProvider>
     </AuthProvider>
   );
 }

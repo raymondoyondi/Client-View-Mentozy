@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, BookOpen, Calendar, MessageSquare, PieChart, Award, LogOut, X, User, Users, PlusCircle, Settings, GraduationCap, CalendarDays, BookMarked } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, MessageSquare, PieChart, Award, LogOut, X, User, Users, PlusCircle, Settings, GraduationCap, CalendarDays, BookMarked, Building2, Bell } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { useOrganizationMode } from '../../../context/OrganizationModeContext';
 import { getUserProfile } from '../../../lib/api';
 
 interface SidebarProps {
@@ -12,6 +13,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { signOut, user } = useAuth();
+    const { mode, activeOrganization } = useOrganizationMode();
     const [profileRole, setProfileRole] = useState<string | null>(null);
 
     useEffect(() => {
@@ -21,7 +23,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     setProfileRole(profile.role);
                 }
             });
-
         }
     }, [user]);
 
@@ -29,6 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     const role = profileRole || user?.user_metadata?.role || 'student';
 
+    // Personal mode navigation items
     const studentItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/student-dashboard' },
         { icon: BookOpen, label: 'Courses', path: '/courses' },
@@ -53,6 +55,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { icon: Settings, label: 'Settings', path: '/mentor-settings' },
     ];
 
+    // Organization mode navigation items (for org admins viewing org dashboard)
     const orgItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/org-dashboard' },
         { icon: GraduationCap, label: 'Students', path: '/org-students' },
@@ -64,12 +67,53 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { icon: Settings, label: 'Settings', path: '/org-settings' },
     ];
 
+    // Organization mode navigation for students (viewing as org student)
+    const orgStudentItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/student-dashboard' },
+        { icon: BookOpen, label: 'My Courses', path: '/courses' },
+        { icon: Calendar, label: 'Sessions', path: '/calendar' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
+        { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: User, label: 'Profile', path: '/profile' },
+        { icon: Settings, label: 'Settings', path: '/settings' },
+    ];
+
+    // Organization mode navigation for teachers (viewing as org teacher)
+    const orgTeacherItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/mentor-dashboard' },
+        { icon: GraduationCap, label: 'My Students', path: '/org-my-students' },
+        { icon: BookOpen, label: 'My Courses', path: '/mentor-courses' },
+        { icon: Calendar, label: 'Sessions', path: '/mentor-calendar' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
+        { icon: MessageSquare, label: 'Messages', path: '/mentor-messages' },
+        { icon: User, label: 'Profile', path: '/mentor-profile' },
+        { icon: Settings, label: 'Settings', path: '/mentor-settings' },
+    ];
+
     const isMentorPath = location.pathname.startsWith('/mentor-');
     const isOrgPath = location.pathname.startsWith('/org-');
     const isOrg = user?.user_metadata?.is_org || isOrgPath;
     const isMentor = (role === 'mentor' && !isOrg) || role === 'organization' || isMentorPath;
 
-    const navItems = isOrg ? orgItems : isMentor ? mentorItems : studentItems;
+    // Determine nav items based on mode and role
+    const getNavItems = () => {
+        // If user is in organization mode
+        if (mode === 'organization' && activeOrganization) {
+            // Check the user's role within the organization
+            if (activeOrganization.role === 'teacher') {
+                return orgTeacherItems;
+            } else {
+                return orgStudentItems;
+            }
+        }
+        
+        // Personal mode - use existing logic
+        if (isOrg) return orgItems;
+        if (isMentor) return mentorItems;
+        return studentItems;
+    };
+
+    const navItems = getNavItems();
 
     return (
         <>
