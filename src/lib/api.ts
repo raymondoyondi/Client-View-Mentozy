@@ -1290,4 +1290,63 @@ export const respondToOrgStudentInvite = async (inviteId: string, orgId: string,
         return false;
     }
 }
+
+// --- ANNOUNCEMENTS ---
+
+export interface Announcement {
+    id: string;
+    org_id: string;
+    title: string;
+    content: string;
+    created_at: string;
+    org?: Profile;
+}
+
+export const getOrgAnnouncements = async (orgId: string): Promise<Announcement[]> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return [];
+        
+        const { data, error } = await supabase
+            .from('announcements')
+            .select('*, org:profiles!org_id(full_name, avatar_url)')
+            .eq('org_id', orgId)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error("Error fetching announcements:", error);
+            return [];
+        }
+        
+        return data as Announcement[];
+    } catch(e) {
+        console.error("Error heavily fetching announcements:", e);
+        return [];
+    }
+}
+
+export const createAnnouncement = async (orgId: string, title: string, content: string): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if(!supabase) return false;
+        
+        const { error } = await supabase
+            .from('announcements')
+            .insert({
+                org_id: orgId,
+                title,
+                content
+            });
+            
+        if (error) {
+            console.error("Error creating announcement:", error);
+            return false;
+        }
+        
+        return true;
+    } catch(e) {
+        console.error("Error pushing announcement:", e);
+        return false;
+    }
+}
 
