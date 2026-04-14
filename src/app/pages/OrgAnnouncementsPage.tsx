@@ -40,6 +40,7 @@ export function OrgAnnouncementsPage() {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isAnnouncementsBackendUnavailable, setIsAnnouncementsBackendUnavailable] = useState(false);
 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -75,14 +76,16 @@ export function OrgAnnouncementsPage() {
 
             if (error) throw error;
             setAnnouncements(data || []);
+            setIsAnnouncementsBackendUnavailable(false);
         } catch (error) {
             console.error('Error loading announcements:', error);
             if (isMissingAnnouncementsTableError(error)) {
                 setAnnouncements([]);
-                toast.warning('Announcements are not configured in backend yet.');
+                setIsAnnouncementsBackendUnavailable(true);
                 return;
             }
 
+            setIsAnnouncementsBackendUnavailable(false);
             toast.error('Failed to load announcements.');
         } finally {
             setIsLoading(false);
@@ -194,6 +197,12 @@ export function OrgAnnouncementsPage() {
                         <Bell className="w-4 h-4 text-indigo-600" />
                         <h2 className="font-bold text-gray-900">Recent Announcements</h2>
                     </div>
+
+                    {isAnnouncementsBackendUnavailable && (
+                        <div className="mx-6 mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Announcements backend is not configured yet. Showing an empty state for now.
+                        </div>
+                    )}
 
                     {isLoading ? (
                         <div className="py-12 flex justify-center">
