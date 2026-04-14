@@ -20,8 +20,17 @@ const isMissingAnnouncementsTableError = (error: unknown) => {
 
     const code = 'code' in error ? String(error.code) : '';
     const message = 'message' in error ? String(error.message).toLowerCase() : '';
+    const details = 'details' in error ? String(error.details).toLowerCase() : '';
+    const hint = 'hint' in error ? String(error.hint).toLowerCase() : '';
 
-    return code === '42P01' || (message.includes('relation') && message.includes(ORG_ANNOUNCEMENTS_TABLE));
+    return (
+        code === '42P01' ||
+        code === 'PGRST205' ||
+        (message.includes('relation') && message.includes(ORG_ANNOUNCEMENTS_TABLE)) ||
+        (message.includes('could not find') && message.includes(ORG_ANNOUNCEMENTS_TABLE)) ||
+        details.includes(ORG_ANNOUNCEMENTS_TABLE) ||
+        hint.includes(ORG_ANNOUNCEMENTS_TABLE)
+    );
 };
 
 export function OrgAnnouncementsPage() {
