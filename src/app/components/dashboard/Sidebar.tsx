@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, BookOpen, Calendar, MessageSquare, PieChart, Award, LogOut, X, User, Users, PlusCircle, Settings, GraduationCap, CalendarDays, BookMarked } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, MessageSquare, PieChart, Award, LogOut, X, User, Users, PlusCircle, Settings, GraduationCap, CalendarDays, BookMarked, Building2, Bell } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { useOrganizationMode } from '../../../context/OrganizationModeContext';
 import { getUserProfile } from '../../../lib/api';
 
 interface SidebarProps {
@@ -12,6 +13,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { signOut, user } = useAuth();
+    const { mode, activeOrganization } = useOrganizationMode();
     const [profileRole, setProfileRole] = useState<string | null>(null);
 
     useEffect(() => {
@@ -21,7 +23,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     setProfileRole(profile.role);
                 }
             });
-
         }
     }, [user]);
 
@@ -29,6 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     const role = profileRole || user?.user_metadata?.role || 'student';
 
+    // Personal mode navigation items
     const studentItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/student-dashboard' },
         { icon: BookOpen, label: 'Courses', path: '/courses' },
@@ -53,15 +55,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { icon: Settings, label: 'Settings', path: '/mentor-settings' },
     ];
 
+    // Organization mode navigation items (for org admins viewing org dashboard)
     const orgItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/org-dashboard' },
         { icon: GraduationCap, label: 'Students', path: '/org-students' },
         { icon: Calendar, label: 'Calendar', path: '/org-calendar' },
         { icon: Users, label: 'Teachers', path: '/org-teachers' },
         { icon: CalendarDays, label: 'Events', path: '/org-events' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
         { icon: BookOpen, label: 'Courses', path: '/org-courses' },
         { icon: BookMarked, label: 'Study Materials', path: '/org-materials' },
         { icon: Settings, label: 'Settings', path: '/org-settings' },
+    ];
+
+    // Organization mode navigation for students (viewing as org student)
+    const orgStudentItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/student-dashboard' },
+        { icon: BookOpen, label: 'My Courses', path: '/courses' },
+        { icon: Calendar, label: 'Sessions', path: '/calendar' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
+        { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: User, label: 'Profile', path: '/profile' },
+        { icon: Settings, label: 'Settings', path: '/settings' },
+    ];
+
+    // Organization mode navigation for teachers (viewing as org teacher)
+    const orgTeacherItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/mentor-dashboard' },
+        { icon: GraduationCap, label: 'My Students', path: '/org-my-students' },
+        { icon: BookOpen, label: 'My Courses', path: '/mentor-courses' },
+        { icon: Calendar, label: 'Sessions', path: '/mentor-calendar' },
+        { icon: Bell, label: 'Announcements', path: '/org-announcements' },
+        { icon: MessageSquare, label: 'Messages', path: '/mentor-messages' },
+        { icon: User, label: 'Profile', path: '/mentor-profile' },
+        { icon: Settings, label: 'Settings', path: '/mentor-settings' },
     ];
 
     const isMentorPath = location.pathname.startsWith('/mentor-');
@@ -69,7 +96,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isOrg = user?.user_metadata?.is_org || isOrgPath;
     const isMentor = (role === 'mentor' && !isOrg) || role === 'organization' || isMentorPath;
 
-    const navItems = isOrg ? orgItems : isMentor ? mentorItems : studentItems;
+    // Determine nav items based on mode and role
+    const getNavItems = () => {
+        // If user is in organization mode
+        if (mode === 'organization' && activeOrganization) {
+            // Check the user's role within the organization
+            if (activeOrganization.role === 'teacher') {
+                return orgTeacherItems;
+            } else {
+                return orgStudentItems;
+            }
+        }
+        
+        // Personal mode - use existing logic
+        if (isOrg) return orgItems;
+        if (isMentor) return mentorItems;
+        return studentItems;
+    };
+
+    const navItems = getNavItems();
 
     return (
         <>
@@ -98,8 +143,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </button>
                     </div>
 
+                    {/* Organization Mode Badge */}
+                    {mode === 'organization' && activeOrganization && (
+                        <div className="mx-4 my-3 p-3 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Building2 className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                <span className="text-xs font-bold text-indigo-700 truncate">{activeOrganization.name}</span>
+                            </div>
+                            <span className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider bg-indigo-100 px-2 py-0.5 rounded-full">
+                                {activeOrganization.role === 'teacher' ? 'Teacher View' : 'Student View'}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Nav Items */}
-                    <nav className="flex-1 px-4 py-6 space-y-1">
+                    <nav className="flex-1 px-4 py-2 space-y-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
@@ -108,11 +166,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 className={`
                                     flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all
                                     ${isActive(item.path)
-                                        ? 'bg-amber-50 text-amber-900'
+                                        ? mode === 'organization'
+                                            ? 'bg-indigo-50 text-indigo-900'
+                                            : 'bg-amber-50 text-amber-900'
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                                 `}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive(item.path) ? 'text-amber-500' : 'text-gray-400'}`} />
+                                <item.icon className={`w-5 h-5 ${isActive(item.path) ? (mode === 'organization' ? 'text-indigo-500' : 'text-amber-500') : 'text-gray-400'}`} />
                                 {item.label}
                             </Link>
                         ))}

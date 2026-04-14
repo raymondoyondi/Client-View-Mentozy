@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
-     BookOpen, ChevronRight, Clock,
+    BookOpen, ChevronRight, Clock,
     Search,
-    Activity, Award, Zap, Building2, Check, X, Bell
+    Activity, Zap, Building2, Check, X, Bell,
+    Flame, Trophy, GraduationCap, Target, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganizationMode } from '../../context/OrganizationModeContext';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
+import { OrgStudentDashboard } from '../components/dashboard/OrgStudentDashboard';
 import { Enrollment, Profile, Booking, getStudentEnrollments, getUserProfile, getStudentBookings, getPendingOrgInvitesForStudent, respondToOrgStudentInvite } from '../../lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from '../../components/ui/calendar';
@@ -14,6 +17,7 @@ import { toast } from 'sonner';
 
 export function StudentDashboardPage() {
     const { user } = useAuth();
+    const { mode, activeOrganization } = useOrganizationMode();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -120,6 +124,15 @@ export function StudentDashboardPage() {
         setDetailsModalOpen(true);
     };
 
+    // Organization mode: show isolated org dashboard
+    if (mode === 'organization' && activeOrganization) {
+        return (
+            <DashboardLayout>
+                <OrgStudentDashboard />
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout>
             {/* Header / Welcome Banner */}
@@ -200,26 +213,62 @@ export function StudentDashboardPage() {
                 </div>
             )}
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-1">{streak}</h3>
-                    <p className="text-sm text-gray-500 font-medium">Streak (days)</p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-1">{completedCount}</h3>
-                    <p className="text-sm text-gray-500 font-medium">Courses completed</p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-1">{totalHours}</h3>
-                    <p className="text-sm text-gray-500 font-medium">Hours learned</p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-1">{lessonsCompleted}</h3>
-                    <p className="text-sm text-gray-500 font-medium">Lessons completed</p>
+{/* Stats Overview - Enhanced Bento Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {/* Streak Card - Featured */}
+                <div className="group relative bg-gradient-to-br from-orange-500 to-amber-600 p-6 rounded-3xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Flame className="w-6 h-6 text-white" />
+                            </div>
+                            {streak > 0 && (
+                                <span className="text-xs font-bold bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">
+                                    On Fire
+                                </span>
+                            )}
+                        </div>
+                        <h3 className="text-4xl font-black text-white mb-1">{streak}</h3>
+                        <p className="text-orange-100 font-medium text-sm">Day Streak</p>
+                    </div>
                 </div>
 
-                {/* Plan & Minutes Widget - REMOVED (Mock Data) */}
+                {/* Courses Completed */}
+                <div className="group bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:-translate-y-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Trophy className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        {completedCount > 0 && (
+                            <Sparkles className="w-5 h-5 text-emerald-500" />
+                        )}
+                    </div>
+                    <h3 className="text-4xl font-black text-gray-900 mb-1">{completedCount}</h3>
+                    <p className="text-gray-500 font-medium text-sm">Courses Done</p>
+                </div>
+
+                {/* Hours Learned */}
+                <div className="group bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:-translate-y-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Clock className="w-6 h-6 text-blue-600" />
+                        </div>
+                    </div>
+                    <h3 className="text-4xl font-black text-gray-900 mb-1">{totalHours}</h3>
+                    <p className="text-gray-500 font-medium text-sm">Hours Learned</p>
+                </div>
+
+                {/* Lessons Completed */}
+                <div className="group bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-y-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-violet-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Target className="w-6 h-6 text-violet-600" />
+                        </div>
+                    </div>
+                    <h3 className="text-4xl font-black text-gray-900 mb-1">{lessonsCompleted}</h3>
+                    <p className="text-gray-500 font-medium text-sm">Lessons Done</p>
+                </div>
             </div>
 
             {/* Main Content Grid */}
@@ -228,144 +277,237 @@ export function StudentDashboardPage() {
                 {/* Left Column (Courses & Activity) */}
                 <div className="lg:col-span-2 space-y-8">
 
-                    {/* My Courses Section */}
+{/* My Courses Section */}
                     <div>
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">My courses</h2>
-                            <Link to="/tracks" className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-                                <ChevronRight className="w-5 h-5" />
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                                    <GraduationCap className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">My Courses</h2>
+                                    <p className="text-sm text-gray-500">{safeEnrollments.length} active courses</p>
+                                </div>
+                            </div>
+                            <Link to="/tracks" className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-700 transition-colors">
+                                View All
+                                <ChevronRight className="w-4 h-4" />
                             </Link>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-5 mb-10">
                             {loading ? (
-                                [1, 2].map(i => <div key={i} className="h-48 bg-gray-100 rounded-3xl animate-pulse" />)
-                            ) : safeEnrollments.length > 0 ? (
-                                safeEnrollments.slice(0, 2).map(enrollment => (
-                                    <div key={enrollment.id} className="group relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300">
-                                        <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-500"></div>
-
-                                        <div className="relative p-7 flex flex-col h-full min-h-[220px]">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
-                                                        <BookOpen className="w-4 h-4 text-indigo-600" />
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Course</span>
-                                                </div>
-                                                <h3 className="text-xl font-bold mb-2 leading-tight text-gray-900">{enrollment.tracks?.title}</h3>
-                                                <p className="text-sm text-gray-500 line-clamp-2">{enrollment.tracks?.description || 'Continue your progress.'}</p>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between text-xs font-bold text-gray-600">
-                                                    <span>{enrollment.tracks?.level}</span>
-                                                    <span className="text-indigo-600">{enrollment.progress}%</span>
-                                                </div>
-                                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${enrollment.progress}%` }}></div>
-                                                </div>
-                                                <Link to={`/learn/${enrollment.track_id}`} className="block w-full text-center py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
-                                                    Continue Learning
-                                                </Link>
-                                            </div>
+                                [1, 2].map(i => (
+                                    <div key={i} className="h-64 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl animate-pulse">
+                                        <div className="p-6 space-y-4">
+                                            <div className="h-8 w-8 bg-gray-200 rounded-xl" />
+                                            <div className="h-6 w-3/4 bg-gray-200 rounded-lg" />
+                                            <div className="h-4 w-full bg-gray-200 rounded-lg" />
+                                            <div className="h-2 w-full bg-gray-200 rounded-full mt-auto" />
                                         </div>
                                     </div>
                                 ))
+                            ) : safeEnrollments.length > 0 ? (
+                                safeEnrollments.slice(0, 2).map((enrollment, index) => {
+                                    const gradients = [
+                                        'from-indigo-500 via-violet-500 to-purple-500',
+                                        'from-emerald-500 via-teal-500 to-cyan-500'
+                                    ];
+                                    return (
+                                        <div key={enrollment.id} className="group relative overflow-hidden rounded-3xl bg-white border-2 border-gray-100 shadow-lg hover:shadow-2xl hover:border-indigo-200 transition-all duration-500 hover:-translate-y-1">
+                                            {/* Gradient top bar */}
+                                            <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${gradients[index % 2]}`}></div>
+                                            
+                                            {/* Progress glow effect */}
+                                            <div 
+                                                className="absolute bottom-0 left-0 h-32 bg-gradient-to-t from-indigo-50/50 to-transparent pointer-events-none transition-all duration-500"
+                                                style={{ width: `${enrollment.progress}%` }}
+                                            />
+
+                                            <div className="relative p-7 flex flex-col h-full min-h-[260px]">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradients[index % 2]} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                                                <BookOpen className="w-6 h-6 text-white" />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-wider">
+                                                                Active
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                                            {enrollment.tracks?.level}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-xl font-bold mb-2 leading-tight text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                                        {enrollment.tracks?.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                                                        {enrollment.tracks?.description || 'Continue your progress.'}
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-4 mt-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-gray-500">Progress</span>
+                                                        <span className="text-sm font-black text-indigo-600">{enrollment.progress}%</span>
+                                                    </div>
+                                                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full bg-gradient-to-r ${gradients[index % 2]} rounded-full transition-all duration-1000 relative overflow-hidden`}
+                                                            style={{ width: `${enrollment.progress}%` }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                                                        </div>
+                                                    </div>
+                                                    <Link 
+                                                        to={`/learn/${enrollment.track_id}`} 
+                                                        className="flex items-center justify-center gap-2 w-full py-3.5 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl group/btn"
+                                                    >
+                                                        Continue Learning
+                                                        <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
                             ) : (
-                                <div className="col-span-2 p-10 bg-white rounded-3xl border border-dashed border-gray-200 text-center">
-                                    <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-gray-500 mb-4">No active courses yet.</p>
-                                    <Link to="/tracks" className="inline-flex items-center justify-center px-6 py-2.5 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 transition-colors">Start Learning</Link>
+                                <div className="col-span-2 p-12 bg-gradient-to-br from-gray-50 to-white rounded-3xl border-2 border-dashed border-gray-200 text-center">
+                                    <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        <BookOpen className="w-8 h-8 text-amber-600" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No Active Courses</h3>
+                                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">Start your learning journey today and unlock new skills.</p>
+                                    <Link to="/tracks" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-amber-500/25 transition-all">
+                                        <Zap className="w-4 h-4" />
+                                        Start Learning
+                                    </Link>
                                 </div>
                             )}
                         </div>
-
-                        {/* Recommended For You Section - REMOVED (Mock Data) */}
                     </div>
                 </div>
 
-                {/* Right Column (Widgets) */}
-                <div className="space-y-8">
+{/* Right Column (Widgets) */}
+                <div className="space-y-6">
 
                     {/* Calendar Widget (Real Bookings) */}
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center">
+                    <div className="bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-lg flex flex-col items-center overflow-hidden">
                         <div className="flex items-center justify-between mb-4 w-full">
-                            <h2 className="text-xl font-bold text-gray-900">Calendar</h2>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+                                    <Clock className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">My Calendar</h2>
+                                    <p className="text-xs text-gray-500">{featureBookings.length} upcoming sessions</p>
+                                </div>
+                            </div>
                         </div>
 
                         <Calendar
                             mode="single"
                             selected={new Date()}
-                            className="rounded-xl border border-gray-100 shadow-none w-full"
+                            className="rounded-xl border-0 shadow-none w-full"
                             modifiers={{ booked: bookedDates }}
-                            modifiersClassNames={{ booked: "font-bold text-amber-600 bg-amber-50" }}
+                            modifiersClassNames={{ booked: "font-bold text-amber-600 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg" }}
                         />
 
-                        {/* Events List */}
-                        <div className="space-y-3 w-full mt-6">
-                            {featureBookings.length > 0 ? (
-                                featureBookings.slice(0, 3).map(booking => (
-                                    <div
-                                        key={booking.id}
-                                        onClick={() => handleBookingClick(booking)}
-                                        className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group"
-                                    >
-                                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex flex-col items-center justify-center font-bold border border-indigo-100 group-hover:bg-indigo-100 transition-colors">
-                                            <span className="text-[10px] uppercase opacity-70 leading-tight">{new Date(booking.scheduled_at).toLocaleDateString('en-US', { month: 'short' })}</span>
-                                            <span className="text-lg leading-none">{new Date(booking.scheduled_at).getDate()}</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-gray-900 text-sm truncate">{booking.mentors?.name || 'Mentor'}</h4>
-                                            <div className="flex items-center gap-2 mt-0.5 text-xs font-medium text-gray-500">
-                                                <Clock className="w-3 h-3" />
-                                                {new Date(booking.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {/* Upcoming Sessions */}
+                        <div className="w-full mt-6 pt-6 border-t border-gray-100">
+                            <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                                Upcoming Sessions
+                            </h3>
+                            <div className="space-y-3">
+                                {featureBookings.length > 0 ? (
+                                    featureBookings.slice(0, 3).map(booking => (
+                                        <div
+                                            key={booking.id}
+                                            onClick={() => handleBookingClick(booking)}
+                                            className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white hover:from-indigo-50 hover:to-white rounded-2xl transition-all duration-300 cursor-pointer group border border-gray-100 hover:border-indigo-200 hover:shadow-md"
+                                        >
+                                            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-2xl flex flex-col items-center justify-center font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                                                <span className="text-[10px] uppercase opacity-80 leading-tight tracking-wider">{new Date(booking.scheduled_at).toLocaleDateString('en-US', { month: 'short' })}</span>
+                                                <span className="text-xl font-black leading-none">{new Date(booking.scheduled_at).getDate()}</span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-indigo-600 transition-colors">{booking.mentors?.name || 'Mentor'}</h4>
+                                                <div className="flex items-center gap-2 mt-1 text-xs font-medium text-gray-500">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {new Date(booking.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </div>
+                                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                <ChevronRight className="w-5 h-5" />
                                             </div>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                            <ChevronRight className="w-4 h-4" />
-                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 bg-gray-50 rounded-2xl">
+                                        <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                        <p className="text-gray-500 text-sm font-medium">No upcoming sessions</p>
+                                        <Link to="/mentors" className="inline-flex items-center gap-1 text-sm text-indigo-600 font-semibold mt-2 hover:underline">
+                                            Find a mentor <ChevronRight className="w-4 h-4" />
+                                        </Link>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-4 text-gray-400 text-xs">
-                                    <p>No upcoming sessions.</p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Certifications Widget (Real Completed Courses) */}
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-gray-900">Certifications</h2>
-                            <Link to="/profile" className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50">
-                                <ChevronRight className="w-5 h-5" />
+                    <div className="bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-lg">
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
+                                    <Trophy className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Certifications</h2>
+                                    <p className="text-xs text-gray-500">{completedCourses.length} earned</p>
+                                </div>
+                            </div>
+                            <Link to="/profile" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 font-medium">
+                                View <ChevronRight className="w-4 h-4" />
                             </Link>
                         </div>
 
                         {completedCourses.length > 0 ? (
                             completedCourses.map(course => (
-                                <div key={course.id} className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm mb-4">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center text-white text-xs font-bold">M</div>
-                                        <span className="text-xs font-bold text-gray-500">Mentozy</span>
-                                    </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-1">{course.tracks?.title}</h3>
-
-                                    <div className="mt-6 flex items-end justify-between">
-                                        <div>
-                                            <p className="text-xs text-gray-400">Issued to</p>
-                                            <p className="text-xs font-bold text-gray-900">{firstName}</p>
+                                <div key={course.id} className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-xl mb-4 hover:shadow-2xl transition-all duration-300">
+                                    {/* Decorative elements */}
+                                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-full blur-2xl" />
+                                    <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-emerald-500/20 to-transparent rounded-full blur-xl" />
+                                    
+                                    <div className="relative">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-gray-900 text-xs font-black shadow-md">M</div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mentozy Certificate</span>
                                         </div>
-                                        <p className="text-[10px] text-gray-400">Verified</p>
+                                        <h3 className="text-lg font-bold text-white mb-3 leading-tight">{course.tracks?.title}</h3>
+
+                                        <div className="flex items-end justify-between pt-4 border-t border-white/10">
+                                            <div>
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Issued to</p>
+                                                <p className="text-sm font-bold text-white">{firstName}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold">
+                                                <Check className="w-3.5 h-3.5" />
+                                                Verified
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                <Award className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                <p className="text-gray-500 text-xs">Complete a course to earn a certificate.</p>
+                            <div className="text-center py-10 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-dashed border-gray-200">
+                                <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Trophy className="w-7 h-7 text-amber-600" />
+                                </div>
+                                <h4 className="font-bold text-gray-900 mb-1">No Certificates Yet</h4>
+                                <p className="text-gray-500 text-sm">Complete a course to earn your first certificate.</p>
                             </div>
                         )}
                     </div>
@@ -381,4 +523,4 @@ export function StudentDashboardPage() {
             />
         </DashboardLayout >
     );
-}
+}

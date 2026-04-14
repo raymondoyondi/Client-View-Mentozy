@@ -1,0 +1,59 @@
+For the organization dashboards, I want you to take inspiration from how platforms like Coursera structure their system.
+The idea is to clearly separate individual learning and organization-based learning, while keeping the experience smooth.
+Here’s how it should work:
+1. User Context (Core Concept)
+A user can belong to an organization but still have a personal account
+
+Based on the toggle (Personal / Organization), the entire dashboard context should switch
+Think of it as two different environments under the same account
+
+
+2. Student Dashboard (Organization Mode)
+
+Students should see only organization-related content
+Courses / sessions assigned by the organization
+Progress tracking within the organization
+Access limited to what the organization provides
+:point_right: No personal subscriptions or personal sessions should appear here
+
+3. Mentor Dashboard (Organization Mode)
+
+Mentors should manage organization-specific students
+View assigned students under that organization
+Conduct / manage sessions linked to the organization
+Track engagement within that org only
+:point_right: Keep this separate from their personal mentoring activities
+
+4. Organization Structure (Important)
+
+Organization acts like a container
+It has:
+Students
+Mentors
+Assigned content / sessions
+All interactions inside org mode should stay within that container
+
+
+5. UX Expectation
+
+Switching between Personal and Organization should feel instant and clean
+No data mixing
+Clear visual indication of current mode (important)
+
+
+Focus on building this structure first.
+ Once this is in place, we’ll expand features on top of it.
+Let me know if anything is unclear.[6:03 AM]One more important point regarding the organization dashboard:
+The organization side should not contain any demo or placeholder content.
+Expectation:
+Show only real, functional components
+
+All actions/buttons should be enabled and working
+No dummy data, no static UI just for display
+If there’s no data yet:
+Keep the sections clean and minimal
+Use proper empty states (e.g., “No sessions assigned yet”)
+
+But still ensure the flow is fully functional
+The goal is to make the org dashboard production-ready in behavior, not just visually complete.
+Proceed with this approach.

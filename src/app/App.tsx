@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { StudentTools } from './components/StudentTools';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider } from '../context/AuthContext';
+import { OrganizationModeProvider } from '../context/OrganizationModeContext';
 
 import { HomePage } from './pages/HomePage';
 import { Toaster } from 'sonner';
@@ -51,6 +52,7 @@ const OrgEventsPage = lazy(() => import('./pages/OrgEventsPage').then(module => 
 const OrgCoursesPage = lazy(() => import('./pages/OrgCoursesPage').then(module => ({ default: module.OrgCoursesPage })));
 const OrgMaterialsPage = lazy(() => import('./pages/OrgMaterialsPage').then(module => ({ default: module.OrgMaterialsPage })));
 const OrgSettingsPage = lazy(() => import('./pages/OrgSettingsPage').then(module => ({ default: module.OrgSettingsPage })));
+const OrgAnnouncementsPage = lazy(() => import('./pages/OrgAnnouncementsPage').then(module => ({ default: module.OrgAnnouncementsPage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then(module => ({ default: module.AdminDashboardPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const PlansPage = lazy(() => import('./pages/PlansPage').then(module => ({ default: module.PlansPage })));
@@ -83,6 +85,7 @@ const MentorCalendarPage = lazy(() => import('./pages/MentorCalendarPage').then(
 const MentorCoursesPage = lazy(() => import('./pages/MentorCoursesPage').then(module => ({ default: module.MentorCoursesPage })));
 const CreateCoursePage = lazy(() => import('./pages/CreateCoursePage').then(module => ({ default: module.CreateCoursePage })));
 const CourseViewerPage = lazy(() => import('./pages/CourseViewerPage').then(module => ({ default: module.CourseViewerPage })));
+const PaymentPage = lazy(() => import('./pages/PaymentPage').then(module => ({ default: module.PaymentPage })));
 
 // Layout Component
 const Layout = () => {
@@ -116,9 +119,10 @@ function App() {
 
   return (
     <AuthProvider>
-      <Toaster position="top-center" richColors /> {/* Added Toaster component */}
+      <OrganizationModeProvider>
+        <Toaster position="top-center" richColors /> {/* Added Toaster component */}
 
-      <Routes>
+        <Routes>
         {/* Public Pages with Layout */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
@@ -263,6 +267,11 @@ function App() {
             <OrgMaterialsPage />
           </Suspense>
         } />
+        <Route path="/org-announcements" element={
+          <Suspense fallback={<PageLoader />}>
+            <OrgAnnouncementsPage />
+          </Suspense>
+        } />
         <Route path="/org-settings" element={
           <Suspense fallback={<PageLoader />}>
             <OrgSettingsPage />
@@ -386,10 +395,18 @@ function App() {
           </Suspense>
         } />
 
-        {/* Catch-all Route */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      <StudentTools />
+        {/* Payment Route */}
+        <Route path="/payment" element={
+          <Suspense fallback={<PageLoader />}>
+            <PaymentPage />
+          </Suspense>
+        } />
+
+          {/* Catch-all Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <StudentTools />
+      </OrganizationModeProvider>
     </AuthProvider>
   );
 }
