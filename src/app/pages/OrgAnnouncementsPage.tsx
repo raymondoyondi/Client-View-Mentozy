@@ -13,6 +13,17 @@ interface Announcement {
     created_at: string;
 }
 
+const ORG_ANNOUNCEMENTS_TABLE = 'org_announcements';
+
+const isMissingAnnouncementsTableError = (error: unknown) => {
+    if (!error || typeof error !== 'object') return false;
+
+    const code = 'code' in error ? String(error.code) : '';
+    const message = 'message' in error ? String(error.message).toLowerCase() : '';
+
+    return code === '42P01' || (message.includes('relation') && message.includes(ORG_ANNOUNCEMENTS_TABLE));
+};
+
 export function OrgAnnouncementsPage() {
     const { user } = useAuth();
     const { mode, activeOrganization } = useOrganizationMode();
@@ -48,7 +59,7 @@ export function OrgAnnouncementsPage() {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
-                .from('org_announcements')
+                .from(ORG_ANNOUNCEMENTS_TABLE)
                 .select('id, title, content, created_at')
                 .eq('org_id', targetOrgId)
                 .order('created_at', { ascending: false });
@@ -57,6 +68,12 @@ export function OrgAnnouncementsPage() {
             setAnnouncements(data || []);
         } catch (error) {
             console.error('Error loading announcements:', error);
+            if (isMissingAnnouncementsTableError(error)) {
+                setAnnouncements([]);
+                toast.warning('Announcements are not configured in backend yet.');
+                return;
+            }
+
             toast.error('Failed to load announcements.');
         } finally {
             setIsLoading(false);
@@ -81,7 +98,7 @@ export function OrgAnnouncementsPage() {
 
         setIsSaving(true);
         try {
-            const { error } = await supabase.from('org_announcements').insert({
+            const { error } = await supabase.from(ORG_ANNOUNCEMENTS_TABLE).insert({
                 org_id: targetOrgId,
                 title: title.trim(),
                 content: content.trim(),
