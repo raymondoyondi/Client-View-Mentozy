@@ -7,6 +7,9 @@
 -- 3. Adding org_id to bookings for organization-specific sessions
 -- 4. Adding org_id to tracks for organization-specific courses
 
+DROP TABLE IF EXISTS public.org_teachers CASCADE;
+DROP TABLE IF EXISTS public.org_teacher_invitations CASCADE;
+
 -- ==============================
 -- ORG_TEACHERS TABLE
 -- ==============================
