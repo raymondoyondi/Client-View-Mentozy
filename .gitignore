@@ -1,2 +1,31 @@
-https://stackblitz.com/storage/blobs/eyJfcmFpbHMiOnsiZGF0YSI6MTUzNjUwNTE0LCJwdXIiOiJibG9iX2lkIn19--19f0d5d8f849d74d182f74c120dc4f86b610364d/.gitignore
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
