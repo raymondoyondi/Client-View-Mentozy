@@ -739,15 +739,22 @@ export const updateBookingStatus = async (bookingId: string, status: 'confirmed'
         const supabase = getSupabase();
         if (!supabase) return false;
 
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('bookings')
             .update({ status })
-            .eq('id', bookingId);
+            .eq('id', bookingId)
+            .select();
 
         if (error) {
             console.error("Error updating booking status:", error);
             return false;
         }
+
+        if (!data || data.length === 0) {
+            console.error("No row updated in DB! This is likely an RLS issue or incorrect Booking ID.");
+            return false;
+        }
+
         return true;
     } catch (e) {
         console.error("Error in updateBookingStatus:", e);
@@ -761,7 +768,7 @@ export const acceptBooking = async (bookingId: string, meetingLink: string, note
         if (!supabase) return false;
 
         // Update Booking Record
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('bookings')
             .update({
                 status: 'confirmed',
@@ -769,12 +776,19 @@ export const acceptBooking = async (bookingId: string, meetingLink: string, note
                 mentor_note: note,
                 payment_link: paymentLink
             })
-            .eq('id', bookingId);
+            .eq('id', bookingId)
+            .select();
 
         if (error) {
             console.error("Error accepting booking:", error);
             return false;
         }
+
+        if (!data || data.length === 0) {
+            console.error("No row updated in DB for acceptBooking! Check RLS or Booking ID.");
+            return false;
+        }
+
         return true;
     } catch (e) {
         console.error("Error in acceptBooking:", e);
