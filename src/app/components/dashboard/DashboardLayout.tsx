@@ -14,6 +14,15 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+
+    const toggleDesktopSidebar = () => {
+        setIsDesktopCollapsed(prev => {
+            const newState = !prev;
+            localStorage.setItem('sidebarCollapsed', String(newState));
+            return newState;
+        });
+    };
     const { user, loading } = useAuth();
     const { mode, activeOrganization, hasOrganizations } = useOrganizationMode();
     const [orgName, setOrgName] = useState('Mentozy');
@@ -46,10 +55,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <Sidebar 
+                isOpen={isSidebarOpen} 
+                onClose={() => setIsSidebarOpen(false)}
+                isDesktopCollapsed={isDesktopCollapsed}
+                onToggleDesktop={toggleDesktopSidebar}
+            />
 
             {/* Main Content */}
-            <div className="md:ml-64 min-h-screen flex flex-col">
+            <div className={`transition-all duration-300 ${isDesktopCollapsed ? 'md:ml-20' : 'md:ml-64'} min-h-screen flex flex-col`}>
 
                 {/* Organization Mode Banner — always visible when in org mode */}
                 {isOrgMode && (
