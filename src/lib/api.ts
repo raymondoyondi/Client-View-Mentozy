@@ -113,7 +113,7 @@ export interface Booking {
     id: string;
     user_id: string;
     mentor_id: number;
-    status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+    status: 'pending' | 'accepted' | 'confirmed' | 'cancelled' | 'completed';
     scheduled_at: string;
     meeting_link?: string;
     mentor_note?: string; // [NEW] Link note
@@ -734,7 +734,7 @@ export const getMentorBookings = async (userId: string): Promise<Booking[]> => {
     }
 };
 
-export const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'cancelled' | 'completed'): Promise<boolean> => {
+export const updateBookingStatus = async (bookingId: string, status: 'accepted' | 'confirmed' | 'cancelled' | 'completed'): Promise<boolean> => {
     try {
         const supabase = getSupabase();
         if (!supabase) return false;
@@ -762,7 +762,7 @@ export const updateBookingStatus = async (bookingId: string, status: 'confirmed'
     }
 };
 
-export const acceptBooking = async (bookingId: string, meetingLink: string, note?: string, paymentLink?: string): Promise<boolean> => {
+export const acceptBooking = async (bookingId: string, note?: string): Promise<boolean> => {
     try {
         const supabase = getSupabase();
         if (!supabase) return false;
@@ -771,10 +771,8 @@ export const acceptBooking = async (bookingId: string, meetingLink: string, note
         const { data, error } = await supabase
             .from('bookings')
             .update({
-                status: 'confirmed',
-                meeting_link: meetingLink,
-                mentor_note: note,
-                payment_link: paymentLink
+                status: 'accepted',
+                mentor_note: note
             })
             .eq('id', bookingId)
             .select();
@@ -792,6 +790,36 @@ export const acceptBooking = async (bookingId: string, meetingLink: string, note
         return true;
     } catch (e) {
         console.error("Error in acceptBooking:", e);
+        return false;
+    }
+};
+
+export const markBookingPaidAndConfirm = async (bookingId: string): Promise<boolean> => {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return false;
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .update({
+                status: 'confirmed'
+            })
+            .eq('id', bookingId)
+            .select();
+
+        if (error) {
+            console.error("Error confirming booking after payment:", error);
+            return false;
+        }
+
+        if (!data || data.length === 0) {
+            console.error("No row updated in DB for markBookingPaidAndConfirm! Check RLS or Booking ID.");
+            return false;
+        }
+
+        return true;
+    } catch (e) {
+        console.error("Error in markBookingPaidAndConfirm:", e);
         return false;
     }
 };

@@ -9,12 +9,12 @@ import { getSupabase } from '../../lib/supabase';
 import {
     Loader2, Calendar, Clock, User, CheckCircle2,
     DollarSign, ChevronRight, AlertCircle, TrendingUp, 
-    Sparkles, Users, Video, Settings, ExternalLink
+    Sparkles, Users, Video, Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
-import { AcceptSessionModal } from '../components/booking/AcceptSessionModal';
 import { StudentProfileModal } from '../components/mentor/StudentProfileModal';
+import { LiveSessionModal } from '../components/video/LiveSessionModal';
 
 export function MentorDashboardPage() {
     const { user } = useAuth();
@@ -30,10 +30,10 @@ export function MentorDashboardPage() {
     const [orgInvites, setOrgInvites] = useState<any[]>([]);
 
     // Modal State
-    const [acceptModalOpen, setAcceptModalOpen] = useState(false);
-    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
     const [viewProfileModalOpen, setViewProfileModalOpen] = useState(false);
     const [viewProfileData, setViewProfileData] = useState<Profile | null>(null);
+    const [liveSessionOpen, setLiveSessionOpen] = useState(false);
+    const [liveSessionParticipantName, setLiveSessionParticipantName] = useState('Student');
 
     // Derived State
     const pendingBookings = bookings.filter(b => b.status === 'pending');
@@ -102,12 +102,12 @@ export function MentorDashboardPage() {
         loadData();
     }, [user, navigate]);
 
-    const handleBookingAction = async (bookingId: string, action: 'confirmed' | 'cancelled') => {
+    const handleBookingAction = async (bookingId: string, action: 'accepted' | 'cancelled') => {
         setProcessingId(bookingId);
         try {
             const success = await updateBookingStatus(bookingId, action);
             if (success) {
-                toast.success(action === 'confirmed' ? 'Session Accepted' : 'Session Declined');
+                toast.success(action === 'accepted' ? 'Session Accepted. Awaiting payment confirmation.' : 'Session Declined');
                 // Optimistic Update
                 setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: action } : b));
             } else {
@@ -136,27 +136,21 @@ export function MentorDashboardPage() {
         }
     };
 
-    const handleAcceptClick = (booking: Booking) => {
-        setSelectedBooking(booking);
-        setAcceptModalOpen(true);
-    };
-
-    const handleConfirmAccept = async (meetingLink: string, note: string, paymentLink: string) => {
-        if (!selectedBooking) return false;
-
-        const success = await acceptBooking(selectedBooking.id, meetingLink, note, paymentLink);
-
-        if (success) {
-            toast.success("Session Accepted Successfully");
-            // Optimistic Update
-            setBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'confirmed' } : b));
-            setSelectedBooking(null);
-            return true;
-        } else {
-            toast.error("Failed to accept session");
-            return false;
+    const handleAcceptBooking = async (booking: Booking) => {
+        setProcessingId(booking.id);
+        try {
+            const success = await acceptBooking(booking.id);
+            if (success) {
+                toast.success("Session accepted. Confirmation will happen automatically after successful Razorpay payment.");
+                setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'accepted' } : b));
+            } else {
+                toast.error("Failed to accept session");
+            }
+        } finally {
+            setProcessingId(null);
         }
     };
+
 
     if (loading) {
         return (
@@ -421,7 +415,7 @@ export function MentorDashboardPage() {
                                                 Decline
                                             </button>
                                             <button
-                                                onClick={() => handleAcceptClick(booking)}
+                                                onClick={() => handleAcceptBooking(booking)}
                                                 disabled={processingId === booking.id}
                                                 className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all flex items-center justify-center gap-2"
                                             >
@@ -501,16 +495,16 @@ export function MentorDashboardPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <a
-                                                href={booking.meeting_link || '#'}
-                                                target="_blank"
-                                                rel="noreferrer"
+                                            <button
+                                                onClick={() => {
+                                                    setLiveSessionParticipantName(booking.profiles?.full_name || 'Student');
+                                                    setLiveSessionOpen(true);
+                                                }}
                                                 className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg transition-all"
                                             >
                                                 <Video className="w-4 h-4" />
                                                 <span className="hidden sm:inline">Join</span>
-                                                <ExternalLink className="w-3.5 h-3.5" />
-                                            </a>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -615,12 +609,10 @@ export function MentorDashboardPage() {
             </div>
 
 
-            {/* Accept Session Modal */}
-            <AcceptSessionModal
-                isOpen={acceptModalOpen}
-                onClose={() => setAcceptModalOpen(false)}
-                studentName={selectedBooking?.profiles?.full_name || 'Student'}
-                onConfirm={handleConfirmAccept}
+            <LiveSessionModal
+                isOpen={liveSessionOpen}
+                onClose={() => setLiveSessionOpen(false)}
+                participantName={liveSessionParticipantName}
             />
 
             <StudentProfileModal

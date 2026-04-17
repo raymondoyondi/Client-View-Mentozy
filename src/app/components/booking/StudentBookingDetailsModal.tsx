@@ -1,5 +1,4 @@
-import { X, Clock, Link, FileText, ExternalLink, DollarSign, Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { X, Clock, Video, FileText } from 'lucide-react';
 import { Booking } from '../../../lib/api';
 
 interface StudentBookingDetailsModalProps {
@@ -54,25 +53,21 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking }: Student
                         </div>
                     </div>
 
-                    {/* Meeting Link */}
+                    {/* Platform Session Access */}
                     {booking.status === 'confirmed' && (
                         <div>
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <Link className="w-3.5 h-3.5" /> Meeting Link
+                                <Video className="w-3.5 h-3.5" /> Join Session
                             </h3>
-                            {booking.meeting_link ? (
-                                <a
-                                    href={booking.meeting_link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-bold hover:bg-indigo-100 transition-colors group"
-                                >
-                                    <span className="truncate mr-2">{booking.meeting_link}</span>
-                                    <ExternalLink className="w-4 h-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
-                                </a>
-                            ) : (
-                                <p className="text-sm text-gray-500 italic">No link provided yet.</p>
-                            )}
+                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm">
+                                This session is confirmed. Join directly inside Mentozy using the in-platform WebRTC session controls.
+                            </div>
+                        </div>
+                    )}
+
+                    {booking.status === 'accepted' && (
+                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm">
+                            Your mentor has accepted this request. Session confirmation will be triggered automatically after successful Razorpay payment.
                         </div>
                     )}
 
@@ -103,47 +98,9 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking }: Student
                         Reasonable assumption: Mentor adds their QR code (Scanner) for payment collection if not done automatically.
                         So Student needs to SEE this image to PAY.
                     */}
-                    {/* Payment Link / UPI */}
-                    {booking.payment_link && (
-                        <div>
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <DollarSign className="w-3.5 h-3.5" /> Payment / UPI ID
-                            </h3>
-                            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between group">
-                                <div className="truncate min-w-0 flex-1 mr-4">
-                                    <p className="text-xs text-emerald-600 font-bold uppercase mb-0.5">Payment Details</p>
-                                    <p className="font-mono text-sm font-medium text-gray-800 truncate select-all">
-                                        {booking.payment_link}
-                                    </p>
-                                </div>
-                                {booking.payment_link.startsWith('http') ? (
-                                    <a
-                                        href={booking.payment_link}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="p-2 bg-white text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors shadow-sm"
-                                        title="Open Link"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                    </a>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(booking.payment_link || '');
-                                            toast.success("Copied to clipboard!");
-                                        }}
-                                        className="p-2 bg-white text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors shadow-sm"
-                                        title="Copy to Clipboard"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Status Banner */}
                     <div className={`mt-4 py-2 px-4 rounded-lg text-center text-sm font-bold ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                        booking.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                         booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                             booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                                 'bg-gray-100 text-gray-700'
