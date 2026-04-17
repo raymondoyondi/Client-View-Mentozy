@@ -1,6 +1,6 @@
-import { Search, Filter, Linkedin, Loader2, Calendar, User, Building2, ShieldCheck } from 'lucide-react';
+import { Search, Filter, Linkedin, Loader2, Calendar, User, Building2, ShieldCheck, Bot, Sparkles, Stars } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
-import { getMentors, Mentor, createBooking } from '../../../lib/api';
+import { getMentors, Mentor, createBooking, getUserProfile, Profile } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,10 @@ export function MentorGallery() {
     const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [studentProfile, setStudentProfile] = useState<Profile | null>(null);
+    const [aiMatchMode, setAiMatchMode] = useState(true);
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function loadMentors() {
@@ -25,17 +29,62 @@ export function MentorGallery() {
         loadMentors();
     }, []);
 
-    const { user } = useAuth();
-    const navigate = useNavigate();
+    useEffect(() => {
+        async function loadProfile() {
+            if (!user) return;
+            const profile = await getUserProfile(user.id);
+            setStudentProfile(profile);
+        }
+        loadProfile();
+    }, [user]);
+
+    const scoreMentorForStudent = (mentor: Mentor) => {
+        if (!studentProfile) return 55;
+
+        const profileIntent = [
+            ...(studentProfile.interests || []),
+            studentProfile.learning_goals,
+            studentProfile.future_goals,
+            studentProfile.learning_now,
+            studentProfile.curiosities
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+        const mentorCorpus = `${mentor.role} ${mentor.company} ${mentor.expertise.join(' ')} ${mentor.bio || ''}`.toLowerCase();
+        const sharedSkills = mentor.expertise.filter(skill => profileIntent.includes(skill.toLowerCase())).length;
+        const goalSignal = profileIntent
+            .split(/[^a-zA-Z0-9]+/)
+            .filter(Boolean)
+            .reduce((count, token) => count + (token.length > 3 && mentorCorpus.includes(token) ? 1 : 0), 0);
+        const availabilityBoost = mentor.status !== 'unavailable' ? 10 : -10;
+
+        return Math.max(35, Math.min(99, 50 + sharedSkills * 12 + Math.min(18, goalSignal) + availabilityBoost));
+    };
+
+    const mentorScores = useMemo(() => {
+        const byId: Record<number, number> = {};
+        mentors.forEach(m => {
+            byId[m.id] = scoreMentorForStudent(m);
+        });
+        return byId;
+    }, [mentors, studentProfile]);
 
     const filteredMentors = useMemo(() => {
-        return mentors.filter(m =>
+        const filtered = mentors.filter(m =>
             m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.expertise.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
         );
-    }, [mentors, searchQuery]);
+
+        if (!aiMatchMode) return filtered;
+
+        return [...filtered].sort((a, b) => (mentorScores[b.id] || 0) - (mentorScores[a.id] || 0));
+    }, [mentors, searchQuery, aiMatchMode, mentorScores]);
+
+    const topAiMatches = useMemo(() => filteredMentors.slice(0, 3), [filteredMentors]);
 
     const handleBookClick = (mentor: Mentor) => {
         if (!user) {
@@ -75,6 +124,47 @@ export function MentorGallery() {
                     Skip the guesswork. Learn directly from industry leaders who have already scaled the mountains you're climbing.
                 </p>
             </motion.div>
+
+            {user && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="max-w-5xl mx-auto mb-10 p-6 rounded-[2rem] border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-amber-50 shadow-lg"
+                >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-[0.2em] text-violet-500 mb-2 flex items-center gap-2">
+                                <Bot className="w-4 h-4" /> Assistant Bot · AI Matching
+                            </p>
+                            <h3 className="text-xl font-black text-gray-900">Personalized mentor recommendations based on your onboarding goals</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                                We score mentors by expertise overlap, stated goals, and current availability so you can book faster.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setAiMatchMode(prev => !prev)}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${aiMatchMode ? 'bg-violet-600 text-white shadow-md' : 'bg-white text-violet-600 border border-violet-200'}`}
+                        >
+                            {aiMatchMode ? 'AI Match Mode: ON' : 'AI Match Mode: OFF'}
+                        </button>
+                    </div>
+
+                    <div className="grid sm:grid-cols-3 gap-3 mt-5">
+                        {topAiMatches.map((mentor) => (
+                            <div key={`ai-${mentor.id}`} className="p-3 rounded-xl bg-white/90 border border-violet-100">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="font-bold text-gray-900 truncate">{mentor.name}</p>
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-black bg-violet-100 text-violet-700">
+                                        <Sparkles className="w-3.5 h-3.5" /> {mentorScores[mentor.id]}%
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{mentor.role} · {mentor.company}</p>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
 
             {/* Search & Filters */}
             <motion.div
@@ -144,6 +234,12 @@ export function MentorGallery() {
                                         <h3 className="text-2xl font-black text-gray-900 group-hover:text-amber-600 transition-colors mb-2 tracking-tighter">
                                             {mentor.name}
                                         </h3>
+
+                                        {user && aiMatchMode && (
+                                            <div className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-[10px] font-black uppercase tracking-[0.16em]">
+                                                <Stars className="w-3.5 h-3.5" /> AI Match {mentorScores[mentor.id]}%
+                                            </div>
+                                        )}
 
                                         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-gray-50 rounded-full border border-gray-100 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
                                             {mentor.type ? <Building2 className="w-3.5 h-3.5 text-amber-500" /> : <User className="w-3.5 h-3.5 text-amber-500" />}
