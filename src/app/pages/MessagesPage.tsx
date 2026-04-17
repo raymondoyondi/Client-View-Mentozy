@@ -11,6 +11,7 @@ import { DashboardLayout } from '../components/dashboard/DashboardLayout';
 import { Contact, getContacts, Message, getMessages, sendMessage, markAllAsRead } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { getSupabase } from '../../lib/supabase';
+import { LiveSessionModal } from '../components/video/LiveSessionModal';
 
 export function MessagesPage() {
     const { user } = useAuth();
@@ -19,6 +20,7 @@ export function MessagesPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
     const [messagesLoading, setMessagesLoading] = useState(false);
+    const [videoModalOpen, setVideoModalOpen] = useState(false);
     const [chatMessages, setChatMessages] = useState<Message[]>([]);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -237,7 +239,7 @@ export function MessagesPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => toast.success("Starting audio call...")} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
-                                    <button onClick={() => toast.success("Starting video call...")} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
+                                    <button onClick={() => setVideoModalOpen(true)} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
                                     <button onClick={() => toast.info("Contact info")} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-xl transition-all"><Info className="w-5 h-5" /></button>
                                 </div>
                             </div>
@@ -324,6 +326,11 @@ export function MessagesPage() {
                 </div>
 
             </div>
+            <LiveSessionModal
+                isOpen={videoModalOpen}
+                onClose={() => setVideoModalOpen(false)}
+                participantName={activeContact?.name || 'Mentor'}
+            />
         </DashboardLayout>
     );
 }

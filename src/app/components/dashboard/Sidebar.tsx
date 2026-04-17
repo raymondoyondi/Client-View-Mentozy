@@ -50,6 +50,15 @@ const DoodleIcon = ({ label, className, active }: { label: string, className?: s
                 <path d="M8 10h.01M12 10h.01M16 10h.01" />
             </svg>
         ),
+        'Community': (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M16 19a4 4 0 0 0-8 0" />
+                <circle cx="12" cy="11" r="3" />
+                <path d="M6 19a3 3 0 0 0-3-3M18 19a3 3 0 0 1 3-3" />
+                <circle cx="4.5" cy="12" r="1.5" />
+                <circle cx="19.5" cy="12" r="1.5" />
+            </svg>
+        ),
         'Analytics': (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 <path d="m3.5 14.5 4.5-4.5 4 4 8.5-8.5M16 5.5h4.5v4.5" />
@@ -112,6 +121,7 @@ export function Sidebar({ isOpen, onClose, isDesktopCollapsed, onToggleDesktop }
         { icon: Users, label: 'Mentors', path: '/dashboard-mentors' },
         { icon: Calendar, label: 'Calendar', path: '/calendar' },
         { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: Users, label: 'Community', path: '/community' },
         { icon: PieChart, label: 'Analytics', path: '/analytics' },
         { icon: Award, label: 'Certifications', path: '/certifications' },
         { icon: User, label: 'Profile', path: '/profile' },
@@ -124,6 +134,7 @@ export function Sidebar({ isOpen, onClose, isDesktopCollapsed, onToggleDesktop }
         { icon: PlusCircle, label: 'Create Course', path: '/mentor-create-course' },
         { icon: Calendar, label: 'Calendar', path: '/mentor-calendar' },
         { icon: MessageSquare, label: 'Messages', path: '/mentor-messages' },
+        { icon: Users, label: 'Community', path: '/mentor-community' },
         { icon: PieChart, label: 'Analytics', path: '/mentor-analytics' },
         { icon: Award, label: 'Achievements', path: '/mentor-achievements' },
         { icon: User, label: 'Profile', path: '/mentor-profile' },
@@ -150,6 +161,7 @@ export function Sidebar({ isOpen, onClose, isDesktopCollapsed, onToggleDesktop }
         { icon: Calendar, label: 'Sessions', path: '/calendar' },
         { icon: Bell, label: 'Announcements', path: '/org-announcements' },
         { icon: MessageSquare, label: 'Messages', path: '/messages' },
+        { icon: Users, label: 'Community', path: '/community' },
         { icon: User, label: 'Profile', path: '/profile' },
         { icon: Settings, label: 'Settings', path: '/settings' },
     ];
@@ -162,6 +174,7 @@ export function Sidebar({ isOpen, onClose, isDesktopCollapsed, onToggleDesktop }
         { icon: Calendar, label: 'Sessions', path: '/mentor-calendar' },
         { icon: Bell, label: 'Announcements', path: '/org-announcements' },
         { icon: MessageSquare, label: 'Messages', path: '/mentor-messages' },
+        { icon: Users, label: 'Community', path: '/mentor-community' },
         { icon: User, label: 'Profile', path: '/mentor-profile' },
         { icon: Settings, label: 'Settings', path: '/mentor-settings' },
     ];
