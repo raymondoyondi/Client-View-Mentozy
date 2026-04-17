@@ -189,7 +189,7 @@ create table public.bookings (
   student_id uuid references profiles(id) on delete cascade,
   mentor_id bigint references mentors(id) on delete cascade,
   availability_id uuid unique references mentor_availability(id),
-  status text check (status in ('pending','confirmed','cancelled','completed')) default 'pending',
+  status text check (status in ('pending','accepted','confirmed','cancelled','completed')) default 'pending',
   meeting_link text,
   mentor_note text,
   payment_proof_url text, -- Deprecated

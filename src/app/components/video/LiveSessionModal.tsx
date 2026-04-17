@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Video, PhoneOff, Mic, MicOff, VideoOff, Link2, MonitorPlay } from 'lucide-react';
+import { Video, PhoneOff, Mic, MicOff, VideoOff, MonitorPlay } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LiveSessionModalProps {
@@ -8,10 +8,7 @@ interface LiveSessionModalProps {
   participantName: string;
 }
 
-type Provider = 'webrtc' | 'zoom';
-
 export function LiveSessionModal({ isOpen, onClose, participantName }: LiveSessionModalProps) {
-  const [provider, setProvider] = useState<Provider>('webrtc');
   const [inSession, setInSession] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -60,13 +57,6 @@ export function LiveSessionModal({ isOpen, onClose, participantName }: LiveSessi
     }
   };
 
-  const launchZoom = () => {
-    const topic = encodeURIComponent(`1-on-1 Mentorship with ${participantName}`);
-    const zoomUrl = `https://zoom.us/start/videomeeting?zc=0&topic=${topic}`;
-    window.open(zoomUrl, '_blank', 'noopener,noreferrer');
-    toast.success('Opened Zoom in a new tab.');
-  };
-
   const toggleTrack = (kind: 'audio' | 'video') => {
     const stream = localStreamRef.current;
     if (!stream) return;
@@ -94,19 +84,13 @@ export function LiveSessionModal({ isOpen, onClose, participantName }: LiveSessi
         </div>
 
         <div className="p-6 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-3">
-            <button onClick={() => setProvider('webrtc')} className={`p-4 rounded-2xl border text-left ${provider === 'webrtc' ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'}`}>
-              <div className="flex items-center gap-2 font-bold text-gray-900"><MonitorPlay className="w-4 h-4" /> Native WebRTC</div>
-              <p className="text-xs text-gray-500 mt-1">Stay inside Mentozy for low-latency mentorship calls.</p>
-            </button>
-            <button onClick={() => setProvider('zoom')} className={`p-4 rounded-2xl border text-left ${provider === 'zoom' ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'}`}>
-              <div className="flex items-center gap-2 font-bold text-gray-900"><Link2 className="w-4 h-4" /> Zoom Integration</div>
-              <p className="text-xs text-gray-500 mt-1">Launch a secure Zoom meeting instantly in a new tab.</p>
-            </button>
+          <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50">
+            <div className="flex items-center gap-2 font-bold text-gray-900"><MonitorPlay className="w-4 h-4" /> Mentozy Native WebRTC</div>
+            <p className="text-xs text-gray-500 mt-1">This session runs fully inside Mentozy. External meeting links are not required.</p>
+            <p className="text-xs text-indigo-700 mt-2 font-semibold">Room ID: {roomId}</p>
           </div>
 
-          {provider === 'webrtc' ? (
-            <div className="rounded-2xl border border-gray-200 bg-gray-950 p-4">
+          <div className="rounded-2xl border border-gray-200 bg-gray-950 p-4">
               <div className="aspect-video rounded-xl overflow-hidden bg-gray-900 relative">
                 <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
                 {!inSession && (
@@ -134,14 +118,6 @@ export function LiveSessionModal({ isOpen, onClose, participantName }: LiveSessi
                 )}
               </div>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-gray-200 p-5 bg-gray-50">
-              <p className="text-sm text-gray-600 mb-4">Room ID: <span className="font-bold text-gray-900">{roomId}</span></p>
-              <button onClick={launchZoom} className="px-5 py-2.5 rounded-xl bg-[#0B5CFF] text-white font-bold hover:opacity-90 inline-flex items-center gap-2">
-                <Video className="w-4 h-4" /> Open Zoom Meeting
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
