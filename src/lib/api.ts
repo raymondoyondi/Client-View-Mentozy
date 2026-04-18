@@ -767,22 +767,28 @@ export const acceptBooking = async (bookingId: string, note?: string): Promise<b
         const supabase = getSupabase();
         if (!supabase) return false;
 
-        // Update Booking Record
+        const updatePayload: { status: 'accepted'; mentor_note?: string } = {
+            status: 'accepted'
+        };
+
+        if (typeof note === 'string' && note.trim().length > 0) {
+            updatePayload.mentor_note = note.trim();
+        }
+
+        // Update booking record.
         const { data, error } = await supabase
             .from('bookings')
-            .update({
-                status: 'accepted',
-                mentor_note: note
-            })
+            .update(updatePayload)
             .eq('id', bookingId)
-            .select();
+            .select('id')
+            .maybeSingle();
 
         if (error) {
             console.error("Error accepting booking:", error);
             return false;
         }
 
-        if (!data || data.length === 0) {
+        if (!data?.id) {
             console.error("No row updated in DB for acceptBooking! Check RLS or Booking ID.");
             return false;
         }
