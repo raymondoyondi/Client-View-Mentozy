@@ -1,4 +1,4 @@
-import { X, Clock, Video, FileText } from 'lucide-react';
+import { X, Clock, Video, FileText, CreditCard, ExternalLink, CalendarClock } from 'lucide-react';
 import { Booking } from '../../../lib/api';
 
 interface StudentBookingDetailsModalProps {
@@ -12,6 +12,7 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking }: Student
 
     const mentorName = booking.mentors?.name || 'Mentor';
     const scheduledDate = new Date(booking.scheduled_at);
+    const isSessionDay = new Date().toDateString() === scheduledDate.toDateString();
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -59,15 +60,49 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking }: Student
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                 <Video className="w-3.5 h-3.5" /> Join Session
                             </h3>
-                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm">
-                                This session is confirmed. Join directly inside Mentozy using the in-platform WebRTC session controls.
-                            </div>
+                            {booking.meeting_link ? (
+                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm space-y-3">
+                                    <p>Your class is confirmed. Use the class link on the session day.</p>
+                                    {isSessionDay ? (
+                                        <a
+                                            href={booking.meeting_link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                                        >
+                                            Join Class <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    ) : (
+                                        <p className="text-xs font-medium text-indigo-900/70 flex items-center gap-1.5">
+                                            <CalendarClock className="w-3.5 h-3.5" />
+                                            Class link unlocks on {scheduledDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}.
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm">
+                                    This session is confirmed. Your class link will appear here once your mentor updates it.
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {booking.status === 'accepted' && (
-                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm">
-                            Your mentor has accepted this request. Session confirmation will be triggered automatically after successful Razorpay payment.
+                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm space-y-3">
+                            <p>Your mentor accepted this session. Complete payment to unlock your final class confirmation.</p>
+                            {booking.payment_link ? (
+                                <a
+                                    href={booking.payment_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors"
+                                >
+                                    <CreditCard className="w-4 h-4" />
+                                    Pay Now
+                                </a>
+                            ) : (
+                                <p className="text-xs font-medium">Payment gateway will appear here once your mentor shares it.</p>
+                            )}
                         </div>
                     )}
 
