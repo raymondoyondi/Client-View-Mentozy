@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
 import { StudentProfileModal } from '../components/mentor/StudentProfileModal';
 import { LiveSessionModal } from '../components/video/LiveSessionModal';
+import { AcceptSessionModal } from '../components/booking/AcceptSessionModal';
 
 export function MentorDashboardPage() {
     const { user } = useAuth();
@@ -34,6 +35,8 @@ export function MentorDashboardPage() {
     const [viewProfileData, setViewProfileData] = useState<Profile | null>(null);
     const [liveSessionOpen, setLiveSessionOpen] = useState(false);
     const [liveSessionParticipantName, setLiveSessionParticipantName] = useState('Student');
+    const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+    const [bookingToAccept, setBookingToAccept] = useState<Booking | null>(null);
 
     // Derived State
     const pendingBookings = bookings.filter(b => b.status === 'pending');
@@ -136,15 +139,30 @@ export function MentorDashboardPage() {
         }
     };
 
-    const handleAcceptBooking = async (booking: Booking) => {
-        setProcessingId(booking.id);
+    const handleAcceptBooking = async (meetingLink: string, note: string, paymentLink: string) => {
+        if (!bookingToAccept) return false;
+        setProcessingId(bookingToAccept.id);
         try {
-            const success = await acceptBooking(booking.id);
+            const success = await acceptBooking(bookingToAccept.id, {
+                note,
+                meetingLink,
+                paymentLink
+            });
             if (success) {
-                toast.success("Session accepted. Confirmation will happen automatically after successful Razorpay payment.");
-                setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'accepted' } : b));
+                toast.success("Session accepted. Student can now pay and receive class details.");
+                setBookings(prev => prev.map(b => b.id === bookingToAccept.id ? {
+                    ...b,
+                    status: 'accepted',
+                    meeting_link: meetingLink,
+                    payment_link: paymentLink,
+                    mentor_note: note
+                } : b));
+                setAcceptModalOpen(false);
+                setBookingToAccept(null);
+                return true;
             } else {
                 toast.error("Failed to accept session");
+                return false;
             }
         } finally {
             setProcessingId(null);
@@ -415,7 +433,10 @@ export function MentorDashboardPage() {
                                                 Decline
                                             </button>
                                             <button
-                                                onClick={() => handleAcceptBooking(booking)}
+                                                onClick={() => {
+                                                    setBookingToAccept(booking);
+                                                    setAcceptModalOpen(true);
+                                                }}
                                                 disabled={processingId === booking.id}
                                                 className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all flex items-center justify-center gap-2"
                                             >
@@ -619,6 +640,17 @@ export function MentorDashboardPage() {
                 isOpen={viewProfileModalOpen}
                 onClose={() => setViewProfileModalOpen(false)}
                 profile={viewProfileData}
+            />
+
+            <AcceptSessionModal
+                isOpen={acceptModalOpen}
+                onClose={() => {
+                    if (processingId) return;
+                    setAcceptModalOpen(false);
+                    setBookingToAccept(null);
+                }}
+                studentName={bookingToAccept?.profiles?.full_name || 'Student'}
+                onConfirm={handleAcceptBooking}
             />
         </DashboardLayout >
     );

@@ -762,17 +762,33 @@ export const updateBookingStatus = async (bookingId: string, status: 'accepted' 
     }
 };
 
-export const acceptBooking = async (bookingId: string, note?: string): Promise<boolean> => {
+export const acceptBooking = async (
+    bookingId: string,
+    details?: { note?: string; meetingLink?: string; paymentLink?: string }
+): Promise<boolean> => {
     try {
         const supabase = getSupabase();
         if (!supabase) return false;
 
-        const updatePayload: { status: 'accepted'; mentor_note?: string } = {
+        const updatePayload: {
+            status: 'accepted';
+            mentor_note?: string;
+            meeting_link?: string;
+            payment_link?: string;
+        } = {
             status: 'accepted'
         };
 
-        if (typeof note === 'string' && note.trim().length > 0) {
-            updatePayload.mentor_note = note.trim();
+        if (typeof details?.note === 'string' && details.note.trim().length > 0) {
+            updatePayload.mentor_note = details.note.trim();
+        }
+
+        if (typeof details?.meetingLink === 'string' && details.meetingLink.trim().length > 0) {
+            updatePayload.meeting_link = details.meetingLink.trim();
+        }
+
+        if (typeof details?.paymentLink === 'string' && details.paymentLink.trim().length > 0) {
+            updatePayload.payment_link = details.paymentLink.trim();
         }
 
         // Update booking record.
