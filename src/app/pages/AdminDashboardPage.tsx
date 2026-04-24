@@ -1,13 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getSupabase } from '../../lib/supabase';
-import { Loader2, Users, FileText, CheckCircle, ShieldAlert } from 'lucide-react';
+import { Loader2, Users, FileText, CheckCircle, ShieldAlert, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+
+type MentorApplication = {
+    id: string;
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+    qualification: string;
+    status: 'pending' | 'approved' | 'rejected';
+    submitted_at: string;
+    hours_daily: string;
+    commitment_type: string;
+    skills: string[];
+    interests: string[];
+    qualification_details: any;
+    why_teach: string;
+    teaching_differentiator: string;
+    scenario_many_doubts: string;
+    scenario_shy_child: string;
+    scenario_edtech_confusion: string;
+    government_id_url: string;
+    pan_or_equivalent_url: string;
+    additional_info: string;
+};
 
 export function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({ totalUsers: 0, pendingApps: 0, activeMentors: 0 });
-    const [pendingApps, setPendingApps] = useState<any[]>([]);
+    const [stats, setStats] = useState({ totalUsers: 0, pendingApps: 0, approvedMentors: 0 });
+    const [pendingApps, setPendingApps] = useState<MentorApplication[]>([]);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [selectedApp, setSelectedApp] = useState<MentorApplication | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -18,95 +44,66 @@ export function AdminDashboardPage() {
         if (!supabase) return;
 
         try {
-            // 1. Fetch Stats
             const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
 
-            // 2. Fetch All Mentors to filter in memory (since status is in JSON)
-            const { data: allMentors, error } = await supabase
-                .from('mentors')
-                .select(`
-                    id,
-                    company,
-                    bio, 
-                    created_at,
-                    profiles:user_id ( full_name, phone )
-                `)
-                .order('created_at', { ascending: false });
+            const { data: applications, error } = await supabase
+                .from('mentor_applications')
+                .select('*')
+                .order('submitted_at', { ascending: false });
 
             if (error) throw error;
 
-            // In-memory filtering
-            const pending: any[] = [];
-            let activeCount = 0;
-
-            allMentors?.forEach((mentor: any) => {
-                try {
-                    // Safe parse if string, otherwise use object
-                    const bioData = typeof mentor.bio === 'string' ? JSON.parse(mentor.bio) : mentor.bio;
-                    // Check for pending status (or assume pending if type is offline and no status?)
-                    // For now strict check
-                    if (bioData?.status === 'pending') {
-                        pending.push(mentor);
-                    } else if (bioData?.status === 'active') {
-                        activeCount++;
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse bio for mentor", mentor.id);
-                }
-            });
+            const all = (applications || []) as MentorApplication[];
+            const pending = all.filter(a => a.status === 'pending');
+            const approved = all.filter(a => a.status === 'approved').length;
 
             setStats({
                 totalUsers: totalUsers || 0,
                 pendingApps: pending.length,
-                activeMentors: activeCount
+                approvedMentors: approved,
             });
-
-            setPendingApps(pending || []);
+            setPendingApps(pending);
         } catch (error: any) {
             console.error('Error fetching admin data:', error);
-            const msg = error?.message || error?.error_description || JSON.stringify(error);
-            toast.error(`Error: ${msg}`);
+            toast.error(error?.message || 'Failed to load admin data');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAction = async (mentorId: string, action: 'approve' | 'reject') => {
-        setProcessingId(mentorId);
+    const handleAction = async (app: MentorApplication, action: 'approve' | 'reject') => {
+        setProcessingId(app.id);
         const supabase = getSupabase();
         if (!supabase) return;
 
         try {
-            // Fetch current bio to preserve other fields
-            const { data: current, error: fetchError } = await supabase
-                .from('mentors')
-                .select('bio')
-                .eq('id', mentorId)
-                .single();
+            const nextStatus = action === 'approve' ? 'approved' : 'rejected';
 
-            if (fetchError || !current) throw new Error("Mentor not found");
-
-            const bioObj = typeof current.bio === 'string' ? JSON.parse(current.bio) : current.bio;
-            bioObj.status = action === 'approve' ? 'active' : 'rejected';
-
-            // Update with new JSON
-            const { error } = await supabase
-                .from('mentors')
+            const { error: updateAppError } = await supabase
+                .from('mentor_applications')
                 .update({
-                    bio: JSON.stringify(bioObj),
-                    // If someday status column exists, we could update it here too, but for now just JSON
+                    status: nextStatus,
+                    reviewed_at: new Date().toISOString(),
+                    reviewed_by: (await supabase.auth.getUser()).data.user?.id || null,
                 })
-                .eq('id', mentorId);
+                .eq('id', app.id);
 
-            if (error) throw error;
+            if (updateAppError) throw updateAppError;
+
+            const mentorStatus = action === 'approve' ? 'active' : 'unavailable';
+            const { error: mentorError } = await supabase
+                .from('mentors')
+                .update({ status: mentorStatus })
+                .eq('user_id', app.user_id);
+
+            if (mentorError) throw mentorError;
 
             toast.success(action === 'approve' ? 'Application Approved' : 'Application Rejected');
-
-            // Refresh Data
+            setSelectedApp(null);
             fetchData();
         } catch (error: any) {
-            toast.error(`Failed to ${action} application`);
             console.error(error);
+            toast.error(`Failed to ${action} application`);
         } finally {
             setProcessingId(null);
         }
@@ -120,26 +117,22 @@ export function AdminDashboardPage() {
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                        <p className="text-gray-500 mt-1">Manage users and institute applications</p>
+                        <p className="text-gray-500 mt-1">Review mentor applications and approve mentor access.</p>
                     </div>
-                    <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium border border-amber-200">
-                        Admin Access
-                    </span>
+                    <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium border border-amber-200">Admin Access</span>
                 </div>
 
-                {/* Stats Grid */}
                 <div className="grid md:grid-cols-3 gap-6">
                     <StatCard title="Total Users" value={stats.totalUsers} icon={Users} color="blue" />
                     <StatCard title="Pending Applications" value={stats.pendingApps} icon={FileText} color="amber" />
-                    <StatCard title="Active Mentors" value={stats.activeMentors} icon={CheckCircle} color="emerald" />
+                    <StatCard title="Approved Mentors" value={stats.approvedMentors} icon={CheckCircle} color="emerald" />
                 </div>
 
-                {/* Pending Applications Section */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                             <ShieldAlert className="w-5 h-5 text-amber-500" />
-                            Pending Organization Approvals
+                            Pending Mentor Applications
                         </h2>
                     </div>
 
@@ -147,17 +140,17 @@ export function AdminDashboardPage() {
                         <div className="p-12 text-center text-gray-500 bg-gray-50/50">
                             <CheckCircle className="w-12 h-12 mx-auto mb-4 text-emerald-500/20" />
                             <p className="font-medium">All caught up!</p>
-                            <p className="text-sm">No pending applications found.</p>
+                            <p className="text-sm">No pending mentor applications found.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
                                     <tr>
-                                        <th className="p-4">Organization / Founder</th>
-                                        <th className="p-4">Contact</th>
-                                        <th className="p-4">Details</th>
-                                        <th className="p-4">Submission Date</th>
+                                        <th className="p-4">Applicant</th>
+                                        <th className="p-4">Qualification</th>
+                                        <th className="p-4">Availability</th>
+                                        <th className="p-4">Submitted</th>
                                         <th className="p-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -165,39 +158,16 @@ export function AdminDashboardPage() {
                                     {pendingApps.map((app) => (
                                         <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="p-4">
-                                                <div className="font-bold text-gray-900">{app.company || 'N/A'}</div>
-                                                <div className="text-gray-500 text-xs">{app.profiles?.full_name}</div>
+                                                <div className="font-bold text-gray-900">{app.first_name} {app.last_name}</div>
+                                                <div className="text-gray-500 text-xs">{app.email} • {app.phone_number}</div>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="text-gray-900">{app.profiles?.email}</div>
-                                                <div className="text-gray-500 text-xs">{app.profiles?.phone || 'No phone'}</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="max-w-xs truncate text-gray-600">
-                                                    {/* In a real app, parse the bio JSON/text properly */}
-                                                    {app.bio?.substring(0, 50)}...
-                                                </div>
-                                                <button className="text-amber-600 hover:text-amber-700 text-xs font-semibold mt-1">View Documents</button>
-                                            </td>
-                                            <td className="p-4 text-gray-500">
-                                                {new Date(app.created_at).toLocaleDateString()}
-                                            </td>
+                                            <td className="p-4 text-gray-700">{app.qualification}</td>
+                                            <td className="p-4 text-gray-700">{app.hours_daily || 'N/A'} ({app.commitment_type || 'N/A'})</td>
+                                            <td className="p-4 text-gray-500">{new Date(app.submitted_at).toLocaleDateString()}</td>
                                             <td className="p-4 text-right space-x-2">
-                                                <button
-                                                    onClick={() => handleAction(app.id, 'reject')}
-                                                    disabled={processingId === app.id}
-                                                    className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold disabled:opacity-50"
-                                                >
-                                                    Reject
-                                                </button>
-                                                <button
-                                                    onClick={() => handleAction(app.id, 'approve')}
-                                                    disabled={processingId === app.id}
-                                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-emerald-500/20 disabled:opacity-50 inline-flex items-center gap-1"
-                                                >
-                                                    {processingId === app.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                                                    Approve
-                                                </button>
+                                                <button onClick={() => setSelectedApp(app)} className="px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> View</button>
+                                                <button onClick={() => handleAction(app, 'reject')} disabled={processingId === app.id} className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold disabled:opacity-50">Reject</button>
+                                                <button onClick={() => handleAction(app, 'approve')} disabled={processingId === app.id} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50">{processingId === app.id ? '...' : 'Approve'}</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -207,8 +177,46 @@ export function AdminDashboardPage() {
                     )}
                 </div>
             </div>
+
+            {selectedApp && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-auto p-6 space-y-4">
+                        <div className="flex justify-between items-start">
+                            <h3 className="text-xl font-bold">Application: {selectedApp.first_name} {selectedApp.last_name}</h3>
+                            <button onClick={() => setSelectedApp(null)} className="text-gray-500">Close</button>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                            <Info label="Qualification" value={selectedApp.qualification} />
+                            <Info label="Skills" value={(selectedApp.skills || []).join(', ')} />
+                            <Info label="Interests" value={(selectedApp.interests || []).join(', ')} />
+                            <Info label="Commitment" value={`${selectedApp.hours_daily || '-'} / ${selectedApp.commitment_type || '-'}`} />
+                        </div>
+                        <Long label="Why teach on Mentozy?" value={selectedApp.why_teach} />
+                        <Long label="Teaching Differentiator" value={selectedApp.teaching_differentiator} />
+                        <Long label="Scenario: Many doubts" value={selectedApp.scenario_many_doubts} />
+                        <Long label="Scenario: Shy child" value={selectedApp.scenario_shy_child} />
+                        <Long label="Scenario: Ed-tech confusion" value={selectedApp.scenario_edtech_confusion} />
+                        <Long label="Additional info" value={selectedApp.additional_info} />
+                        <div className="text-sm space-y-1">
+                            <p><strong>Government ID:</strong> <a className="text-blue-600 underline" href={selectedApp.government_id_url} target="_blank" rel="noreferrer">View document</a></p>
+                            <p><strong>PAN/Equivalent:</strong> <a className="text-blue-600 underline" href={selectedApp.pan_or_equivalent_url} target="_blank" rel="noreferrer">View document</a></p>
+                            {selectedApp.qualification_details?.license_certification_url && (
+                                <p><strong>License/Certification:</strong> <a className="text-blue-600 underline" href={selectedApp.qualification_details.license_certification_url} target="_blank" rel="noreferrer">View document</a></p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
+}
+
+function Info({ label, value }: { label: string; value?: string }) {
+    return <div className="rounded-lg border border-gray-200 p-3"><p className="text-gray-500 text-xs">{label}</p><p className="text-gray-900">{value || '—'}</p></div>;
+}
+
+function Long({ label, value }: { label: string; value?: string }) {
+    return <div><p className="text-xs text-gray-500 mb-1">{label}</p><p className="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap">{value || '—'}</p></div>;
 }
 
 function StatCard({ title, value, icon: Icon, color }: any) {

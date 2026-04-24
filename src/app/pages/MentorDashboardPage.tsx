@@ -62,7 +62,22 @@ export function MentorDashboardPage() {
             try {
                 const supabase = getSupabase();
 
-                // 1. Parallel Fetch: Profile & Bookings & Invites
+                // 1. Ensure mentor application is approved before dashboard access
+                if (supabase) {
+                    const { data: applicationData } = await supabase
+                        .from('mentor_applications')
+                        .select('status')
+                        .eq('user_id', user.id)
+                        .maybeSingle();
+
+                    if (applicationData && applicationData.status !== 'approved') {
+                        toast.info(`Your mentor application is currently ${applicationData.status}. Dashboard unlocks after approval.`);
+                        navigate('/teacher-success?status=pending&type=mentor', { replace: true });
+                        return;
+                    }
+                }
+
+                // 2. Parallel Fetch: Profile & Bookings & Invites
                 const [userProfile, userBookings, invitesData] = await Promise.all([
                     getUserProfile(user.id),
                     getMentorBookings(user.id),
