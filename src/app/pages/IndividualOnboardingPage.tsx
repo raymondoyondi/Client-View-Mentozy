@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Loader2, UploadCloud } from 'lucide-react';
 import { getSupabase } from '../../lib/supabase';
 import { toast } from 'sonner';
@@ -8,9 +7,9 @@ type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type Qualification = 'Student' | 'Professional' | 'Expert Mentor' | 'Others' | '';
 
 const STORAGE_KEY = 'mentozy_mentor_application_draft_v1';
+const APPLICATIONS_PORTAL_URL = (import.meta.env.VITE_APPLICATIONS_PORTAL_URL || 'https://applications.mentozy.app').replace(/\/$/, '');
 
 export function IndividualOnboardingPage() {
-    const navigate = useNavigate();
     const [step, setStep] = useState<Step>(1);
     const [loading, setLoading] = useState(false);
     const [uploadingField, setUploadingField] = useState<string | null>(null);
@@ -211,6 +210,20 @@ export function IndividualOnboardingPage() {
 
             if (!authData.user) throw new Error('Failed to create/find user');
 
+            const { data: sessionData } = await supabase.auth.getSession();
+            const activeSession = sessionData.session;
+
+            if (!activeSession || activeSession.user.id !== authData.user.id) {
+                const { error: ensureSessionError } = await supabase.auth.signInWithPassword({
+                    email: formData.email,
+                    password: formData.password,
+                });
+
+                if (ensureSessionError) {
+                    throw new Error('Unable to authenticate your account for submission. Please verify your credentials and try again.');
+                }
+            }
+
             await supabase.from('profiles').upsert({
                 id: authData.user.id,
                 full_name: `${formData.firstName} ${formData.lastName}`,
@@ -278,7 +291,7 @@ export function IndividualOnboardingPage() {
 
             localStorage.removeItem(STORAGE_KEY);
             toast.success('Application submitted! We will review and get back to you soon.');
-            navigate('/teacher-success?status=pending&type=mentor');
+            window.location.assign(`${APPLICATIONS_PORTAL_URL}?status=pending&type=mentor`);
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Failed to submit application');
