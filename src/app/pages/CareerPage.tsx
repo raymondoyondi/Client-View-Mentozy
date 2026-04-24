@@ -1,6 +1,9 @@
-import { MapPin, Clock, ArrowRight, Briefcase, Search, Filter, CheckCircle2, Mail, Code2, Database, CreditCard } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, CheckCircle2, Code2, Database, CreditCard } from 'lucide-react';
+import { ApplicationFormModal } from '../components/ApplicationFormModal';
 
 export function CareerPage() {
+  const [applyingFor, setApplyingFor] = useState<string | null>(null);
   const jobs = [
     {
       id: 'backend',
@@ -153,18 +156,25 @@ export function CareerPage() {
 
               <div className="flex items-center justify-between pt-6 border-t border-gray-100">
                 <div className="text-xs text-gray-400 font-medium">
-                  Application via Email
+                  Submissions go to applications.mentozy.app
                 </div>
-                <a
-                  href={`mailto:hello@mentozy.app?subject=Application for ${job.role}`}
+                <button
+                  type="button"
+                  onClick={() => setApplyingFor(job.role)}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  Apply Now <Mail className="w-4 h-4" />
-                </a>
+                  Apply Now <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}
         </div>
+
+        <ApplicationFormModal
+          open={!!applyingFor}
+          onOpenChange={(open) => !open && setApplyingFor(null)}
+          role={applyingFor ?? ''}
+        />
 
         {/* Footer Note */}
         <div className="mt-20 text-center max-w-2xl mx-auto">
