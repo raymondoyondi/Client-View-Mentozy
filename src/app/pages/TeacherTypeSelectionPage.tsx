@@ -2,6 +2,8 @@
 import { User, Building, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const MENTOR_APPLICATIONS_URL = 'https://applications.mentozy.app/';
+
 export function TeacherTypeSelectionPage() {
     const navigate = useNavigate();
 
@@ -30,15 +32,15 @@ export function TeacherTypeSelectionPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Individual Teacher Card */}
                         <div
-                            onClick={() => navigate('/individual-onboarding')}
+                            onClick={() => window.open(MENTOR_APPLICATIONS_URL, '_blank', 'noopener,noreferrer')}
                             className="bg-white p-10 rounded-3xl border-2 border-gray-100 cursor-pointer transition-all duration-300 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/5 group flex flex-col items-center text-center"
                         >
                             <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <User className="w-10 h-10" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Individual Teacher</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Individual Mentor</h3>
                             <p className="text-gray-500 mb-8 leading-relaxed">
-                                For solo educators, mentors, and experts looking to guide students personally.
+                                Apply with us to become a mentor via our applications portal.
                             </p>
                             <div className="mt-auto opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 font-semibold flex items-center gap-2">
                                 Continue <ChevronRight className="w-4 h-4" />
