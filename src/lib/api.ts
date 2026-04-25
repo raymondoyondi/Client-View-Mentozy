@@ -780,16 +780,16 @@ export const acceptBooking = async (bookingId: string, note?: string): Promise<b
             .from('bookings')
             .update(updatePayload)
             .eq('id', bookingId)
-            .select('id')
+            .select()
             .maybeSingle();
 
         if (error) {
-            console.error("Error accepting booking:", error);
+            console.error("[API] Error accepting booking:", error.message, error.details);
             return false;
         }
 
         if (!data?.id) {
-            console.error("No row updated in DB for acceptBooking! Check RLS or Booking ID.");
+            console.error(`[API] No row updated in DB for acceptBooking (ID: ${bookingId})!`);
             return false;
         }
 

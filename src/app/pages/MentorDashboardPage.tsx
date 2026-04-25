@@ -138,14 +138,19 @@ export function MentorDashboardPage() {
 
     const handleAcceptBooking = async (booking: Booking) => {
         setProcessingId(booking.id);
+        console.log(`[Dashboard] Attempting to accept booking: ${booking.id}`);
         try {
             const success = await acceptBooking(booking.id);
             if (success) {
                 toast.success("Session accepted. Confirmation will happen automatically after successful Razorpay payment.");
                 setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'accepted' } : b));
             } else {
-                toast.error("Failed to accept session");
+                console.error(`[Dashboard] Failed to accept booking ${booking.id}. See API logs for details.`);
+                toast.error("Failed to accept session. Please check your internet connection or try again later.");
             }
+        } catch (error) {
+            console.error(`[Dashboard] Catch block error accepting booking:`, error);
+            toast.error("An unexpected error occurred. Please try again.");
         } finally {
             setProcessingId(null);
         }

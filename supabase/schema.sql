@@ -214,7 +214,12 @@ on bookings for insert with check (auth.uid() = student_id);
 create policy "Booking updates"
 on bookings for update using (
   auth.uid() = student_id OR
-  exists (select 1 from mentors where id = bookings.mentor_id and user_id = auth.uid())
+  exists (select 1 from mentors where id = bookings.mentor_id and user_id = auth.uid()) OR
+  exists (
+    select 1 from org_teachers 
+    where org_teachers.org_id = bookings.org_id 
+    and org_teachers.teacher_id = auth.uid()
+  )
 );
 
 -- ==============================
