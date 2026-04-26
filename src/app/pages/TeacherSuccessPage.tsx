@@ -10,6 +10,7 @@ export function TeacherSuccessPage() {
 
     const isPending = status === 'pending';
     const isOrg = type === 'org';
+    const isMentor = type === 'mentor' || type === 'individual' || !type;
 
     const dashPath = isOrg ? '/org-dashboard' : '/mentor-dashboard';
     const profilePath = isOrg ? '/org-settings' : '/mentor-dashboard?tab=profile';
@@ -27,7 +28,11 @@ export function TeacherSuccessPage() {
 
                 <p className="text-gray-600 mb-8 leading-relaxed">
                     {isPending
-                        ? "Your application for an Offline Campus account has been received. Our team is reviewing your documents and will contact you shortly."
+                        ? isOrg
+                        ? "Your organization application has been received. Our team is reviewing your documents and will contact you shortly."
+                        : isMentor
+                            ? "Your mentor application has been received. Our team is reviewing your details and documents. Access will unlock after approval."
+                            : "Your application has been received and is under review."
                         : "Your teacher account has been successfully created. You can now access your dashboard and start setting up your profile."
                     }
                 </p>
