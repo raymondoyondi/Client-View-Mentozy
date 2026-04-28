@@ -582,7 +582,8 @@ export const getStudentBookings = async (userId: string): Promise<Booking[]> => 
                     company: m.company || 'Independent',
                     expertise: m.mentor_expertise?.map((e: any) => e.skill) || [],
                     image: m.profiles?.avatar_url || '',
-                    initials: '??'
+                    initials: '??',
+                    hourly_rate: m.hourly_rate || undefined
                 };
             }
 
