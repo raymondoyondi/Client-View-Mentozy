@@ -1,18 +1,95 @@
-import { X, Clock, Video, FileText, CreditCard, ExternalLink, CalendarClock } from 'lucide-react';
-import { Booking } from '../../../lib/api';
+import { useState } from 'react';
+import { X, Clock, Video, FileText, CreditCard, ExternalLink, CalendarClock, Loader2 } from 'lucide-react';
+import { Booking, markBookingPaidAndConfirm } from '../../../lib/api';
+import { toast } from 'sonner';
 
 interface StudentBookingDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     booking: Booking | null;
+    onBookingUpdated?: (bookingId: string, updates: Partial<Booking>) => void;
 }
 
-export function StudentBookingDetailsModal({ isOpen, onClose, booking }: StudentBookingDetailsModalProps) {
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
+
+const FALLBACK_SESSION_PRICE_INR = 500;
+
+export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBookingUpdated }: StudentBookingDetailsModalProps) {
+    const [paying, setPaying] = useState(false);
     if (!isOpen || !booking) return null;
 
     const mentorName = booking.mentors?.name || 'Mentor';
     const scheduledDate = new Date(booking.scheduled_at);
     const isSessionDay = new Date().toDateString() === scheduledDate.toDateString();
+    const amountINR = booking.mentors?.hourly_rate || FALLBACK_SESSION_PRICE_INR;
+
+    const handleEmbeddedPayment = async () => {
+        if (paying) return;
+
+        if (!window.Razorpay) {
+            toast.error('Payment checkout is unavailable right now. Please refresh and try again.');
+            return;
+        }
+
+        setPaying(true);
+        try {
+            const orderRes = await fetch('/api/payments/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amountINR,
+                    currency: 'INR',
+                    bookingId: booking.id,
+                }),
+            });
+
+            const payload = await orderRes.json();
+            if (!orderRes.ok || !payload?.order?.id) {
+                throw new Error(payload?.error || 'Failed to create payment order.');
+            }
+
+            const rzp = new window.Razorpay({
+                key: payload?.checkout?.key,
+                name: 'Mentozy',
+                description: `Mentorship session with ${mentorName}`,
+                order_id: payload.order.id,
+                amount: payload.order.amount,
+                currency: payload.order.currency || 'INR',
+                theme: { color: '#f59e0b' },
+                modal: {
+                    ondismiss: () => setPaying(false),
+                },
+                handler: async () => {
+                    const confirmed = await markBookingPaidAndConfirm(booking.id);
+                    if (!confirmed) {
+                        toast.error('Payment succeeded, but session confirmation failed. Please contact support.');
+                        setPaying(false);
+                        return;
+                    }
+
+                    onBookingUpdated?.(booking.id, { status: 'confirmed' });
+                    toast.success('Payment successful. Your session is now confirmed.');
+                    setPaying(false);
+                    onClose();
+                },
+            });
+
+            rzp.on('payment.failed', () => {
+                toast.error('Payment failed. Please try again.');
+                setPaying(false);
+            });
+
+            rzp.open();
+        } catch (error) {
+            console.error('Embedded booking payment failed:', error);
+            toast.error('Could not start payment. Please try again.');
+            setPaying(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -90,18 +167,24 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking }: Student
                     {booking.status === 'accepted' && (
                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm space-y-3">
                             <p>Your mentor accepted this session. Complete payment to unlock your final class confirmation.</p>
-                            {booking.payment_link ? (
+                            <button
+                                type="button"
+                                onClick={handleEmbeddedPayment}
+                                disabled={paying}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors disabled:opacity-70"
+                            >
+                                {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                                Pay ₹{amountINR}
+                            </button>
+                            {booking.payment_link && (
                                 <a
                                     href={booking.payment_link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors"
+                                    className="block text-xs font-semibold text-amber-700 underline underline-offset-2"
                                 >
-                                    <CreditCard className="w-4 h-4" />
-                                    Pay Now
+                                    Prefer mentor link instead? Open shared payment link.
                                 </a>
-                            ) : (
-                                <p className="text-xs font-medium">Payment gateway will appear here once your mentor shares it.</p>
                             )}
                         </div>
                     )}
