@@ -77,10 +77,10 @@ export function AcceptSessionModal({ isOpen, onClose, studentName, onConfirm }: 
                         />
                     </div>
 
-                    {/* Payment Link */}
+                    {/* Payment Link (Optional Fallback) */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-emerald-600" /> Payment Link / UPI ID
+                            <CreditCard className="h-4 w-4 text-emerald-600" /> Payment Link / UPI ID (Optional)
                         </label>
                         <input
                             type="text"
@@ -89,7 +89,7 @@ export function AcceptSessionModal({ isOpen, onClose, studentName, onConfirm }: 
                             value={paymentLink}
                             onChange={(e) => setPaymentLink(e.target.value)}
                         />
-                        <p className="mt-1.5 text-xs text-gray-500">Provide a UPI ID or payment link for the student.</p>
+                        <p className="mt-1.5 text-xs text-gray-500">Optional fallback. Students can now pay directly in-app.</p>
                     </div>
 
                     {/* Note */}
