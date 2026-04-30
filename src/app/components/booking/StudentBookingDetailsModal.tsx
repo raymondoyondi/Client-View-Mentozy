@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, Clock, Video, FileText, CreditCard, ExternalLink, CalendarClock, Loader2 } from 'lucide-react';
+import { X, Clock, Video, FileText, CreditCard, CalendarClock, Loader2, ShieldCheck } from 'lucide-react';
 import { Booking, markBookingPaidAndConfirm } from '../../../lib/api';
 import { toast } from 'sonner';
+import { LiveSessionModal } from '../video/LiveSessionModal';
 
 interface StudentBookingDetailsModalProps {
     isOpen: boolean;
@@ -20,6 +21,7 @@ const FALLBACK_SESSION_PRICE_INR = 500;
 
 export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBookingUpdated }: StudentBookingDetailsModalProps) {
     const [paying, setPaying] = useState(false);
+    const [liveSessionOpen, setLiveSessionOpen] = useState(false);
     if (!isOpen || !booking) return null;
 
     const mentorName = booking.mentors?.name || 'Mentor';
@@ -92,6 +94,7 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBooking
     };
 
     return (
+        <>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
@@ -131,36 +134,34 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBooking
                         </div>
                     </div>
 
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-sm">
+                        <p className="font-semibold">Automatic split enabled after successful payment.</p>
+                        <p className="mt-1">Mentor receives 92% and Mentozy receives 8% through platform settlement.</p>
+                    </div>
+
                     {/* Platform Session Access */}
                     {booking.status === 'confirmed' && (
                         <div>
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                 <Video className="w-3.5 h-3.5" /> Join Session
                             </h3>
-                            {booking.meeting_link ? (
-                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm space-y-3">
-                                    <p>Your class is confirmed. Use the class link on the session day.</p>
-                                    {isSessionDay ? (
-                                        <a
-                                            href={booking.meeting_link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-                                        >
-                                            Join Class <ExternalLink className="w-4 h-4" />
-                                        </a>
-                                    ) : (
-                                        <p className="text-xs font-medium text-indigo-900/70 flex items-center gap-1.5">
-                                            <CalendarClock className="w-3.5 h-3.5" />
-                                            Class link unlocks on {scheduledDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}.
-                                        </p>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm">
-                                    This session is confirmed. Your class link will appear here once your mentor updates it.
-                                </div>
-                            )}
+                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm space-y-3">
+                                <p>Your class is confirmed. Join through Mentozy Native WebRTC.</p>
+                                {isSessionDay ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setLiveSessionOpen(true)}
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                                    >
+                                        <Video className="w-4 h-4" /> Join Class
+                                    </button>
+                                ) : (
+                                    <p className="text-xs font-medium text-indigo-900/70 flex items-center gap-1.5">
+                                        <CalendarClock className="w-3.5 h-3.5" />
+                                        Join unlocks on {scheduledDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -176,16 +177,7 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBooking
                                 {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                                 Pay ₹{amountINR}
                             </button>
-                            {booking.payment_link && (
-                                <a
-                                    href={booking.payment_link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block text-xs font-semibold text-amber-700 underline underline-offset-2"
-                                >
-                                    Prefer mentor link instead? Open shared payment link.
-                                </a>
-                            )}
+                            <p className="text-xs inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> Payment is mandatory before join is enabled.</p>
                         </div>
                     )}
 
@@ -228,5 +220,11 @@ export function StudentBookingDetailsModal({ isOpen, onClose, booking, onBooking
                 </div>
             </div>
         </div>
+        <LiveSessionModal
+            isOpen={liveSessionOpen}
+            onClose={() => setLiveSessionOpen(false)}
+            participantName={mentorName}
+        />
+        </>
     );
 }
